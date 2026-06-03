@@ -3,8 +3,10 @@ server:
 
 
 spring:
+  profiles:
+    active: local
   datasource:
-    url: jdbc:mysql://localhost:3306/zhiluhang?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://localhost:3306/zhilulinghang?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
     username: ...
     password: ...
   application:
