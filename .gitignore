@@ -1,0 +1,11 @@
+# Environment
+.env
+
+# Spring Boot local config
+backend/src/main/resources/application-local.yml
+
+# IDEA
+.idea/
+
+# Maven
+backend/target/

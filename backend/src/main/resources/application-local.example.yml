@@ -1,0 +1,21 @@
+server:
+  port: 8080
+
+
+spring:
+  profiles:
+    active: local
+  datasource:
+    url: jdbc:mysql://localhost:3306/zhilulinghang?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: your_username
+    password: your_password
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  application:
+    name: backend
+
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+
+jwt:
+  secret: your_secret
