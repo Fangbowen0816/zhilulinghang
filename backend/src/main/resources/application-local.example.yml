@@ -19,3 +19,4 @@ mybatis:
 
 jwt:
   secret: your_secret
+  expire-seconds: 86400
