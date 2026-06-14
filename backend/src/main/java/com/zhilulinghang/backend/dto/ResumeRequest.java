@@ -1,10 +1,24 @@
 package com.zhilulinghang.backend.dto;
 
 public class ResumeRequest {
+    private String title;
     private String name;
+    private String phone;
+    private String email;
+    private String targetPosition;
     private String education;
     private String experience;
     private String skills;
+    private String awards;
+    private String selfEvaluation;
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
 
     public String getName() {
         return name;
@@ -12,6 +26,30 @@ public class ResumeRequest {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getTargetPosition() {
+        return targetPosition;
+    }
+
+    public void setTargetPosition(String targetPosition) {
+        this.targetPosition = targetPosition;
     }
 
     public String getEducation() {
@@ -36,5 +74,21 @@ public class ResumeRequest {
 
     public void setSkills(String skills) {
         this.skills = skills;
+    }
+
+    public String getAwards() {
+        return awards;
+    }
+
+    public void setAwards(String awards) {
+        this.awards = awards;
+    }
+
+    public String getSelfEvaluation() {
+        return selfEvaluation;
+    }
+
+    public void setSelfEvaluation(String selfEvaluation) {
+        this.selfEvaluation = selfEvaluation;
     }
 }

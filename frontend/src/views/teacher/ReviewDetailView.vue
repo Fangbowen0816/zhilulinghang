@@ -9,13 +9,19 @@
 
     <template v-else>
       <el-descriptions :column="1" border class="resume-detail">
+        <el-descriptions-item label="简历名称">{{ resume.title }}</el-descriptions-item>
         <el-descriptions-item label="姓名">{{ resume.name }}</el-descriptions-item>
+        <el-descriptions-item label="手机号">{{ resume.phone || "未填写" }}</el-descriptions-item>
+        <el-descriptions-item label="邮箱">{{ resume.email || "未填写" }}</el-descriptions-item>
+        <el-descriptions-item label="求职意向">{{ resume.targetPosition || "未填写" }}</el-descriptions-item>
         <el-descriptions-item label="状态">
           <el-tag>{{ resume.status }}</el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="教育经历">{{ resume.education }}</el-descriptions-item>
         <el-descriptions-item label="项目经历">{{ resume.experience }}</el-descriptions-item>
         <el-descriptions-item label="技能">{{ resume.skills }}</el-descriptions-item>
+        <el-descriptions-item label="奖项证书">{{ resume.awards || "未填写" }}</el-descriptions-item>
+        <el-descriptions-item label="自我评价">{{ resume.selfEvaluation || "未填写" }}</el-descriptions-item>
       </el-descriptions>
 
       <el-form label-width="90px" class="review-form">

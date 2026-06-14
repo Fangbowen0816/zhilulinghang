@@ -7,9 +7,9 @@ VALUES
 ('teacher', '123456', 'TEACHER'),
 ('student2', '123456', 'STUDENT');
 
-INSERT INTO resume(student_id, name, education, experience, skills, status, teacher_comment)
+INSERT INTO resume(student_id, title, name, phone, email, target_position, education, experience, skills, awards, self_evaluation, status, teacher_comment)
 VALUES
-((SELECT id FROM `user` WHERE username = 'student'), '张同学', '软件工程本科，主修 Java、数据库、软件测试', '参与课程项目“职路领航”，负责前端页面和接口联调', 'Java, Spring Boot, Vue, MySQL', 'DRAFT', NULL),
-((SELECT id FROM `user` WHERE username = 'student2'), '李同学', '计算机科学与技术本科', '完成校园二手交易平台后端接口开发', 'Java, MyBatis, Redis, Linux', 'SUBMITTED', NULL),
-((SELECT id FROM `user` WHERE username = 'student'), '张同学-已通过版本', '软件工程本科', '参与简历审核 MVP 开发', 'Vue, Element Plus, Axios', 'APPROVED', '结构清晰，可以补充项目量化成果。'),
-((SELECT id FROM `user` WHERE username = 'student2'), '李同学-退回版本', '计算机科学与技术本科', '项目经历描述较简单', 'Java, SQL', 'REJECTED', '建议补充项目职责、技术难点和最终成果。');
+((SELECT id FROM `user` WHERE username = 'student'), 'Java 后端校招简历', '张同学', '13800000000', 'student@example.com', 'Java 后端开发实习生', '软件工程本科，主修 Java、数据库、软件测试', '参与课程项目“职路领航”，负责前端页面和接口联调', 'Java, Spring Boot, Vue, MySQL', '校级软件设计竞赛三等奖', '学习能力强，重视代码质量和团队协作。', 'DRAFT', NULL),
+((SELECT id FROM `user` WHERE username = 'student2'), '校园项目后端简历', '李同学', '13900000000', 'student2@example.com', '后端开发实习生', '计算机科学与技术本科', '完成校园二手交易平台后端接口开发', 'Java, MyBatis, Redis, Linux', '通过 CET-4', '熟悉基础后端开发流程，能够独立完成接口开发。', 'SUBMITTED', NULL),
+((SELECT id FROM `user` WHERE username = 'student'), '前端方向已通过版本', '张同学', '13800000000', 'student@example.com', '前端开发实习生', '软件工程本科', '参与简历审核 MVP 开发', 'Vue, Element Plus, Axios', '校级优秀学生', '具备较好的页面实现和接口联调能力。', 'APPROVED', '结构清晰，可以补充项目量化成果。'),
+((SELECT id FROM `user` WHERE username = 'student2'), '基础后端退回版本', '李同学', '13900000000', 'student2@example.com', 'Java 开发实习生', '计算机科学与技术本科', '项目经历描述较简单', 'Java, SQL', '无', '希望在真实项目中提升工程实践能力。', 'REJECTED', '建议补充项目职责、技术难点和最终成果。');

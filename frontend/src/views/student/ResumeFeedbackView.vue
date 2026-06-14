@@ -2,28 +2,36 @@
   <div class="page">
     <h2>简历反馈</h2>
 
-    <el-empty v-if="!resume" description="暂无简历反馈" />
+    <el-empty v-if="resumes.length === 0" description="暂无简历反馈" />
 
-    <el-descriptions v-else :column="1" border>
-      <el-descriptions-item label="姓名">{{ resume.name }}</el-descriptions-item>
-      <el-descriptions-item label="状态">
-        <el-tag :type="statusType">{{ statusText }}</el-tag>
-      </el-descriptions-item>
-      <el-descriptions-item label="教师意见">
-        {{ resume.teacherComment || "教师暂未填写反馈" }}
-      </el-descriptions-item>
-      <el-descriptions-item label="教育经历">{{ resume.education }}</el-descriptions-item>
-      <el-descriptions-item label="项目经历">{{ resume.experience }}</el-descriptions-item>
-      <el-descriptions-item label="技能">{{ resume.skills }}</el-descriptions-item>
-    </el-descriptions>
+    <el-table v-else :data="resumes" border>
+      <el-table-column prop="id" label="ID" width="80" />
+      <el-table-column prop="title" label="简历名称" width="180">
+        <template #default="{ row }">
+          {{ row.title || row.name || "未命名简历" }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="targetPosition" label="求职意向" width="180" />
+      <el-table-column label="状态" width="110">
+        <template #default="{ row }">
+          <el-tag :type="getStatusType(row.status)">{{ statusMap[row.status] || row.status }}</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="teacherComment" label="教师意见">
+        <template #default="{ row }">
+          {{ row.teacherComment || "教师暂未填写反馈" }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="updateTime" label="更新时间" width="190" />
+    </el-table>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from "vue"
+import { onMounted, ref } from "vue"
 import { getResumeFeedbackApi } from "../../api/resume"
 
-const resume = ref(null)
+const resumes = ref([])
 
 const statusMap = {
   DRAFT: "草稿",
@@ -32,23 +40,22 @@ const statusMap = {
   REJECTED: "已退回"
 }
 
-const statusText = computed(() => statusMap[resume.value?.status] || "未知")
-const statusType = computed(() => {
-  if (resume.value?.status === "APPROVED") return "success"
-  if (resume.value?.status === "REJECTED") return "danger"
-  if (resume.value?.status === "SUBMITTED") return "warning"
-  return "info"
-})
-
 onMounted(async () => {
   const result = await getResumeFeedbackApi()
-  resume.value = result.resume
+  resumes.value = result.resumes || []
 })
+
+function getStatusType(status) {
+  if (status === "APPROVED") return "success"
+  if (status === "REJECTED") return "danger"
+  if (status === "SUBMITTED") return "warning"
+  return "info"
+}
 </script>
 
 <style scoped>
 .page {
-  max-width: 900px;
+  max-width: 960px;
 }
 
 h2 {

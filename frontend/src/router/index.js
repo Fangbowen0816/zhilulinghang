@@ -55,6 +55,10 @@ const routes = [
         component: () => import("../views/student/ResumeEditView.vue")
       },
       {
+        path: "resume/:id",
+        component: () => import("../views/student/ResumeEditView.vue")
+      },
+      {
         path: "resume/feedback",
         component: () => import("../views/student/ResumeFeedbackView.vue")
       }

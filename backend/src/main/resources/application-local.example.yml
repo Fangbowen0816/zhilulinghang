@@ -20,3 +20,9 @@ mybatis:
 jwt:
   secret: your_secret
   expire-seconds: 86400
+
+deepseek:
+  base-url: https://api.deepseek.com
+  api-key: ***REMOVED-LEAKED-DEEPSEEK-KEY-1***
+  model: deepseek-v4-flash
+  timeout-seconds: 30
