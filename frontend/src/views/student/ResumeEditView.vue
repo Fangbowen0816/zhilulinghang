@@ -3,14 +3,49 @@
     <div class="page-header">
       <div>
         <h2>制作简历</h2>
-        <p>填写并保存简历，确认无误后提交给教师审核。</p>
+        <p>维护多份简历，选择一份编辑后可提交给教师审核。</p>
       </div>
       <el-tag :type="statusType">{{ statusText }}</el-tag>
     </div>
 
+    <div class="resume-toolbar">
+      <el-select
+        v-model="resumeId"
+        placeholder="请选择简历"
+        class="resume-select"
+        :disabled="resumes.length === 0"
+        @change="selectResume"
+      >
+        <el-option
+          v-for="resume in resumes"
+          :key="resume.id"
+          :label="`${resume.title || resume.name || '未命名简历'} #${resume.id}`"
+          :value="resume.id"
+        >
+          <span>{{ resume.title || resume.name || "未命名简历" }}</span>
+          <el-tag size="small" class="option-tag">{{ statusMap[resume.status] || resume.status }}</el-tag>
+        </el-option>
+      </el-select>
+
+      <el-button @click="newResume">新建简历</el-button>
+      <el-button type="danger" :disabled="!resumeId" @click="deleteResume">删除简历</el-button>
+    </div>
+
     <el-form label-width="90px" :model="form" class="resume-form">
+      <el-form-item label="简历名称">
+        <el-input v-model="form.title" placeholder="例如：Java 后端校招简历、前端实习简历" />
+      </el-form-item>
       <el-form-item label="姓名">
         <el-input v-model="form.name" placeholder="请输入姓名" />
+      </el-form-item>
+      <el-form-item label="手机号">
+        <el-input v-model="form.phone" placeholder="请输入手机号" />
+      </el-form-item>
+      <el-form-item label="邮箱">
+        <el-input v-model="form.email" placeholder="请输入邮箱" />
+      </el-form-item>
+      <el-form-item label="求职意向">
+        <el-input v-model="form.targetPosition" placeholder="例如：Java 后端开发实习生" />
       </el-form-item>
       <el-form-item label="教育经历">
         <el-input v-model="form.education" type="textarea" :rows="4" placeholder="学校、专业、课程或荣誉" />
@@ -21,9 +56,25 @@
       <el-form-item label="技能">
         <el-input v-model="form.skills" type="textarea" :rows="3" placeholder="例如：Java, Spring Boot, Vue, MySQL" />
       </el-form-item>
+      <el-form-item label="奖项证书">
+        <el-input v-model="form.awards" type="textarea" :rows="3" placeholder="竞赛奖项、证书、荣誉称号等" />
+      </el-form-item>
+      <el-form-item label="自我评价">
+        <el-input v-model="form.selfEvaluation" type="textarea" :rows="3" placeholder="概括个人优势、学习能力、协作能力等" />
+      </el-form-item>
+      <el-form-item label="润色目标">
+        <el-input
+          v-model="polishGoal"
+          type="textarea"
+          :rows="2"
+          placeholder="可选，例如：面向 Java 后端校招，突出项目成果和技术能力"
+        />
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="saveResume">保存草稿</el-button>
-        <el-button type="success" :disabled="!resumeId" @click="submitResume">提交审核</el-button>
+        <el-button type="success" @click="submitResume">提交审核</el-button>
+        <el-button type="warning" :loading="polishLoading" @click="polishResume">AI 润色</el-button>
+        <el-button @click="previewDialogVisible = true">预览</el-button>
       </el-form-item>
     </el-form>
 
@@ -35,23 +86,133 @@
       show-icon
       :closable="false"
     />
+
+    <el-dialog v-model="polishDialogVisible" title="AI 润色结果" width="720px">
+      <el-alert
+        v-if="polishedResume.summary"
+        :title="polishedResume.summary"
+        type="success"
+        show-icon
+        :closable="false"
+        class="polish-summary"
+      />
+      <el-descriptions :column="1" border>
+        <el-descriptions-item label="简历名称">{{ polishedResume.title || "未填写" }}</el-descriptions-item>
+        <el-descriptions-item label="姓名">{{ polishedResume.name || "未填写" }}</el-descriptions-item>
+        <el-descriptions-item label="手机号">{{ polishedResume.phone || "未填写" }}</el-descriptions-item>
+        <el-descriptions-item label="邮箱">{{ polishedResume.email || "未填写" }}</el-descriptions-item>
+        <el-descriptions-item label="求职意向">{{ polishedResume.targetPosition || "未填写" }}</el-descriptions-item>
+        <el-descriptions-item label="教育经历">
+          <div class="polished-text">{{ polishedResume.education || "未填写" }}</div>
+        </el-descriptions-item>
+        <el-descriptions-item label="项目经历">
+          <div class="polished-text">{{ polishedResume.experience || "未填写" }}</div>
+        </el-descriptions-item>
+        <el-descriptions-item label="技能">
+          <div class="polished-text">{{ polishedResume.skills || "未填写" }}</div>
+        </el-descriptions-item>
+        <el-descriptions-item label="奖项证书">
+          <div class="polished-text">{{ polishedResume.awards || "未填写" }}</div>
+        </el-descriptions-item>
+        <el-descriptions-item label="自我评价">
+          <div class="polished-text">{{ polishedResume.selfEvaluation || "未填写" }}</div>
+        </el-descriptions-item>
+      </el-descriptions>
+      <template #footer>
+        <el-button @click="polishDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="applyPolishedResume">采纳润色结果</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="previewDialogVisible" title="简历预览" width="760px">
+      <article class="resume-preview">
+        <header class="preview-header">
+          <h1>{{ form.name || "姓名" }}</h1>
+          <p>{{ form.targetPosition || "求职意向未填写" }}</p>
+          <div class="preview-contact">
+            <span v-if="form.phone">{{ form.phone }}</span>
+            <span v-if="form.email">{{ form.email }}</span>
+          </div>
+        </header>
+
+        <section v-if="form.education">
+          <h3>教育经历</h3>
+          <p>{{ form.education }}</p>
+        </section>
+        <section v-if="form.experience">
+          <h3>项目经历</h3>
+          <p>{{ form.experience }}</p>
+        </section>
+        <section v-if="form.skills">
+          <h3>技能</h3>
+          <p>{{ form.skills }}</p>
+        </section>
+        <section v-if="form.awards">
+          <h3>奖项证书</h3>
+          <p>{{ form.awards }}</p>
+        </section>
+        <section v-if="form.selfEvaluation">
+          <h3>自我评价</h3>
+          <p>{{ form.selfEvaluation }}</p>
+        </section>
+        <el-empty v-if="!hasResumeContent()" description="暂无可预览内容" />
+      </article>
+      <template #footer>
+        <el-button type="primary" @click="previewDialogVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from "vue"
-import { ElMessage } from "element-plus"
-import { createResumeApi, getMyResumeApi, submitResumeApi, updateResumeApi } from "../../api/resume"
+import { computed, onMounted, reactive, ref, watch } from "vue"
+import { useRoute, useRouter } from "vue-router"
+import { ElMessage, ElMessageBox } from "element-plus"
+import {
+  createResumeApi,
+  deleteResumeApi,
+  getMyResumesApi,
+  polishResumeApi,
+  submitResumeApi,
+  updateResumeApi
+} from "../../api/resume"
 
+const route = useRoute()
+const router = useRouter()
+const resumes = ref([])
 const resumeId = ref(null)
 const status = ref("DRAFT")
 const teacherComment = ref("")
+const polishGoal = ref("")
+const polishLoading = ref(false)
+const polishDialogVisible = ref(false)
+const previewDialogVisible = ref(false)
 
 const form = reactive({
+  title: "",
   name: "",
+  phone: "",
+  email: "",
+  targetPosition: "",
   education: "",
   experience: "",
-  skills: ""
+  skills: "",
+  awards: "",
+  selfEvaluation: ""
+})
+
+const polishedResume = reactive({
+  title: "",
+  name: "",
+  phone: "",
+  email: "",
+  targetPosition: "",
+  education: "",
+  experience: "",
+  skills: "",
+  awards: "",
+  selfEvaluation: "",
+  summary: ""
 })
 
 const statusMap = {
@@ -61,7 +222,7 @@ const statusMap = {
   REJECTED: "已退回"
 }
 
-const statusText = computed(() => statusMap[status.value] || "未创建")
+const statusText = computed(() => (resumeId.value ? statusMap[status.value] || "未知" : "新简历"))
 const statusType = computed(() => {
   if (status.value === "APPROVED") return "success"
   if (status.value === "REJECTED") return "danger"
@@ -69,46 +230,221 @@ const statusType = computed(() => {
   return "info"
 })
 
-onMounted(loadResume)
+onMounted(() => loadResumes(routeResumeId.value))
 
-async function loadResume() {
-  const resume = await getMyResumeApi()
-  if (!resume) return
+const routeResumeId = computed(() => {
+  const id = Number(route.params.id)
+  return Number.isFinite(id) && id > 0 ? id : null
+})
+
+watch(routeResumeId, id => {
+  loadResumes(id)
+})
+
+async function loadResumes(selectId) {
+  resumes.value = await getMyResumesApi()
+  const selected = resumes.value.find(item => item.id === selectId) || resumes.value[0]
+  if (selectId && !selected) {
+    ElMessage.warning("简历不存在或无权访问")
+    router.replace("/student/resume/edit")
+    newResume()
+  } else if (selected && (selectId || route.path !== "/student/resume/edit")) {
+    applyResume(selected)
+  } else {
+    newResume()
+  }
+}
+
+function selectResume(id) {
+  const selected = resumes.value.find(item => item.id === id)
+  if (selected) {
+    router.push(`/student/resume/${id}`)
+  }
+}
+
+function applyResume(resume) {
   resumeId.value = resume.id
   status.value = resume.status
   teacherComment.value = resume.teacherComment || ""
+  form.title = resume.title || ""
   form.name = resume.name || ""
+  form.phone = resume.phone || ""
+  form.email = resume.email || ""
+  form.targetPosition = resume.targetPosition || ""
   form.education = resume.education || ""
   form.experience = resume.experience || ""
   form.skills = resume.skills || ""
+  form.awards = resume.awards || ""
+  form.selfEvaluation = resume.selfEvaluation || ""
+}
+
+function newResume() {
+  if (route.path !== "/student/resume/edit") {
+    router.push("/student/resume/edit")
+  }
+  resumeId.value = null
+  status.value = "DRAFT"
+  teacherComment.value = ""
+  polishGoal.value = ""
+  form.title = ""
+  form.name = ""
+  form.phone = ""
+  form.email = ""
+  form.targetPosition = ""
+  form.education = ""
+  form.experience = ""
+  form.skills = ""
+  form.awards = ""
+  form.selfEvaluation = ""
 }
 
 async function saveResume() {
-  if (!form.name) {
-    ElMessage.warning("请先填写姓名")
+  const validationMessage = validateDraft()
+  if (validationMessage) {
+    ElMessage.warning(validationMessage)
     return
   }
+  ensureTitle()
   const payload = { ...form }
   const resume = resumeId.value
     ? await updateResumeApi(resumeId.value, payload)
     : await createResumeApi(payload)
 
-  resumeId.value = resume.id
-  status.value = resume.status
-  teacherComment.value = resume.teacherComment || ""
+  await loadResumes(resume.id)
+  if (routeResumeId.value !== resume.id) {
+    router.replace(`/student/resume/${resume.id}`)
+  }
   ElMessage.success("简历已保存")
 }
 
 async function submitResume() {
+  const validationMessage = validateSubmit()
+  if (validationMessage) {
+    ElMessage.warning(validationMessage)
+    return
+  }
+  ensureTitle()
+  if (!resumeId.value) {
+    await saveResume()
+  }
   const resume = await submitResumeApi(resumeId.value)
-  status.value = resume.status
+  await loadResumes(resume.id)
   ElMessage.success("已提交教师审核")
+}
+
+async function deleteResume() {
+  await ElMessageBox.confirm("删除后无法恢复，确认删除这份简历吗？", "删除简历", {
+    type: "warning",
+    confirmButtonText: "确认删除",
+    cancelButtonText: "取消"
+  })
+  await deleteResumeApi(resumeId.value)
+  await loadResumes()
+  router.replace("/student/resume/edit")
+  ElMessage.success("简历已删除")
+}
+
+async function polishResume() {
+  if (!hasResumeContent()) {
+    ElMessage.warning("请先填写简历内容，再使用 AI 润色")
+    return
+  }
+
+  polishLoading.value = true
+  try {
+    const result = await polishResumeApi({
+      ...form,
+      goal: polishGoal.value
+    })
+    polishedResume.title = result.title || ""
+    polishedResume.name = result.name || ""
+    polishedResume.phone = result.phone || ""
+    polishedResume.email = result.email || ""
+    polishedResume.targetPosition = result.targetPosition || ""
+    polishedResume.education = result.education || ""
+    polishedResume.experience = result.experience || ""
+    polishedResume.skills = result.skills || ""
+    polishedResume.awards = result.awards || ""
+    polishedResume.selfEvaluation = result.selfEvaluation || ""
+    polishedResume.summary = result.summary || ""
+    polishDialogVisible.value = true
+  } finally {
+    polishLoading.value = false
+  }
+}
+
+function applyPolishedResume() {
+  form.title = polishedResume.title
+  form.name = polishedResume.name
+  form.phone = polishedResume.phone
+  form.email = polishedResume.email
+  form.targetPosition = polishedResume.targetPosition
+  form.education = polishedResume.education
+  form.experience = polishedResume.experience
+  form.skills = polishedResume.skills
+  form.awards = polishedResume.awards
+  form.selfEvaluation = polishedResume.selfEvaluation
+  polishDialogVisible.value = false
+  ElMessage.success("已采纳润色结果，请确认后保存")
+}
+
+function hasResumeContent() {
+  return [
+    form.name,
+    form.targetPosition,
+    form.education,
+    form.experience,
+    form.skills,
+    form.awards,
+    form.selfEvaluation
+  ].some(value => value && value.trim())
+}
+
+function validateDraft() {
+  if (!form.name.trim()) {
+    return "请先填写姓名"
+  }
+  if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+    return "邮箱格式不正确"
+  }
+  if (form.phone && !/^[0-9+\-\s()]{6,30}$/.test(form.phone.trim())) {
+    return "手机号格式不正确"
+  }
+  return ""
+}
+
+function validateSubmit() {
+  const draftMessage = validateDraft()
+  if (draftMessage) {
+    return draftMessage
+  }
+  if (!form.targetPosition.trim()) {
+    return "提交审核前请填写求职意向"
+  }
+  if (![form.education, form.experience, form.skills].some(value => value && value.trim())) {
+    return "提交审核前请至少填写教育经历、项目经历或技能"
+  }
+  return ""
+}
+
+function ensureTitle() {
+  if (form.title.trim()) {
+    form.title = form.title.trim()
+    return
+  }
+  if (form.name.trim() && form.targetPosition.trim()) {
+    form.title = `${form.name.trim()} - ${form.targetPosition.trim()}`
+  } else if (form.targetPosition.trim()) {
+    form.title = `${form.targetPosition.trim()}简历`
+  } else {
+    form.title = "我的简历"
+  }
 }
 </script>
 
 <style scoped>
 .page {
-  max-width: 900px;
+  max-width: 960px;
 }
 
 .page-header {
@@ -127,7 +463,77 @@ async function submitResume() {
   color: #667085;
 }
 
+.resume-toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.resume-select {
+  width: 320px;
+}
+
+.option-tag {
+  float: right;
+  margin-top: 2px;
+}
+
 .resume-form {
   max-width: 760px;
+}
+
+.polish-summary {
+  margin-bottom: 16px;
+}
+
+.polished-text {
+  white-space: pre-wrap;
+  line-height: 1.7;
+}
+
+.resume-preview {
+  color: #1f2937;
+}
+
+.preview-header {
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e4e7ed;
+  margin-bottom: 18px;
+}
+
+.preview-header h1 {
+  margin: 0 0 8px;
+  font-size: 28px;
+  letter-spacing: 0;
+}
+
+.preview-header p {
+  margin: 0 0 8px;
+  color: #475467;
+}
+
+.preview-contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  color: #667085;
+  font-size: 14px;
+}
+
+.resume-preview section {
+  margin-bottom: 18px;
+}
+
+.resume-preview h3 {
+  margin: 0 0 8px;
+  color: #1f2937;
+  font-size: 16px;
+}
+
+.resume-preview p {
+  margin: 0;
+  line-height: 1.8;
+  white-space: pre-wrap;
 }
 </style>

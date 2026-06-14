@@ -1,10 +1,6 @@
-package com.zhilulinghang.backend.model;
+package com.zhilulinghang.backend.dto;
 
-import java.time.LocalDateTime;
-
-public class Resume {
-    private Long id;
-    private Long studentId;
+public class ResumePolishResponse {
     private String title;
     private String name;
     private String phone;
@@ -15,26 +11,7 @@ public class Resume {
     private String skills;
     private String awards;
     private String selfEvaluation;
-    private String status;
-    private String teacherComment;
-    private LocalDateTime createTime;
-    private LocalDateTime updateTime;
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Long getStudentId() {
-        return studentId;
-    }
-
-    public void setStudentId(Long studentId) {
-        this.studentId = studentId;
-    }
+    private String summary;
 
     public String getTitle() {
         return title;
@@ -116,35 +93,11 @@ public class Resume {
         this.selfEvaluation = selfEvaluation;
     }
 
-    public String getStatus() {
-        return status;
+    public String getSummary() {
+        return summary;
     }
 
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public String getTeacherComment() {
-        return teacherComment;
-    }
-
-    public void setTeacherComment(String teacherComment) {
-        this.teacherComment = teacherComment;
-    }
-
-    public LocalDateTime getCreateTime() {
-        return createTime;
-    }
-
-    public void setCreateTime(LocalDateTime createTime) {
-        this.createTime = createTime;
-    }
-
-    public LocalDateTime getUpdateTime() {
-        return updateTime;
-    }
-
-    public void setUpdateTime(LocalDateTime updateTime) {
-        this.updateTime = updateTime;
+    public void setSummary(String summary) {
+        this.summary = summary;
     }
 }

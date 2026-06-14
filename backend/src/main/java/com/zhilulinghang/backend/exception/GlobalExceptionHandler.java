@@ -18,4 +18,15 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handleIllegalArgument(IllegalArgumentException exception) {
         return ResponseEntity.badRequest().body(Map.of("message", exception.getMessage()));
     }
+
+    @ExceptionHandler(AiServiceException.class)
+    public ResponseEntity<Map<String, String>> handleAiService(AiServiceException exception) {
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(Map.of("message", exception.getMessage()));
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, String>> handleException(Exception exception) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("message", "服务端异常：" + exception.getMessage()));
+    }
 }

@@ -7,7 +7,9 @@
 
     <el-table :data="resumes" border empty-text="暂无待审核简历">
       <el-table-column prop="id" label="ID" width="80" />
+      <el-table-column prop="title" label="简历名称" width="180" />
       <el-table-column prop="name" label="学生姓名" width="140" />
+      <el-table-column prop="targetPosition" label="求职意向" width="180" />
       <el-table-column prop="education" label="教育经历" />
       <el-table-column prop="skills" label="技能" />
       <el-table-column prop="updateTime" label="提交时间" width="190" />
