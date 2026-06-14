@@ -23,6 +23,6 @@ jwt:
 
 deepseek:
   base-url: https://api.deepseek.com
-  api-key: sk-b7b6f6ad2267483d81f06063ecfc63e9
+  api-key: ${DEEPSEEK_API_KEY:}
   model: deepseek-v4-flash
   timeout-seconds: 30
