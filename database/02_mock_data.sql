@@ -7,6 +7,16 @@ VALUES
 ('teacher', '123456', 'TEACHER'),
 ('student2', '123456', 'STUDENT');
 
+INSERT INTO platform_setting(setting_key, setting_value, description)
+VALUES
+('teacher_review_enabled', 'true', '是否开放学生提交教师审核请求'),
+('resume_polish_enabled', 'true', '是否开放 AI 简历润色功能'),
+('maintenance_notice', '', '平台维护公告');
+
+INSERT INTO teacher_profile(teacher_id, display_name, department, title, bio, expertise_tags, available, approval_status, approval_comment, approved_by, approved_time)
+VALUES
+((SELECT id FROM `user` WHERE username = 'teacher'), '王老师', '软件工程系', '讲师', '长期指导学生完善校招简历，关注项目经历表达和工程能力呈现。', 'Java 后端,Vue 前端,校招简历', 1, 'APPROVED', NULL, (SELECT id FROM `user` WHERE username = 'admin'), CURRENT_TIMESTAMP);
+
 INSERT INTO resume(student_id, title, name, phone, email, target_position, education, experience, skills, awards, self_evaluation, status, teacher_comment)
 VALUES
 ((SELECT id FROM `user` WHERE username = 'student'), 'Java 后端校招简历', '张同学', '13800000000', 'student@example.com', 'Java 后端开发实习生', '软件工程本科，主修 Java、数据库、软件测试', '参与课程项目“职路领航”，负责前端页面和接口联调', 'Java, Spring Boot, Vue, MySQL', '校级软件设计竞赛三等奖', '学习能力强，重视代码质量和团队协作。', 'DRAFT', NULL),

@@ -13,7 +13,7 @@ import java.util.List;
 
 @Mapper
 public interface ResumeMapper {
-    String COLUMNS = "id, student_id, title, name, phone, email, target_position, education, experience, skills, awards, self_evaluation, status, teacher_comment, create_time, update_time";
+    String COLUMNS = "id, student_id, source_resume_id, generated_by_teacher_id, version_type, title, name, phone, email, target_position, education, experience, skills, awards, self_evaluation, status, teacher_comment, frozen, freeze_reason, create_time, update_time";
 
     @Select("SELECT " + COLUMNS + " FROM resume WHERE student_id = #{studentId} ORDER BY update_time DESC LIMIT 1")
     Resume findLatestByStudentId(Long studentId);
@@ -21,13 +21,25 @@ public interface ResumeMapper {
     @Select("SELECT " + COLUMNS + " FROM resume WHERE student_id = #{studentId} ORDER BY update_time DESC")
     List<Resume> findByStudentId(Long studentId);
 
+    @Select("SELECT " + COLUMNS + " FROM resume ORDER BY update_time DESC")
+    List<Resume> findAll();
+
     @Select("SELECT " + COLUMNS + " FROM resume WHERE id = #{id}")
     Resume findById(Long id);
+
+    @Select("SELECT " + COLUMNS + " FROM resume WHERE source_resume_id = #{sourceResumeId} ORDER BY update_time DESC")
+    List<Resume> findVersionsBySourceResumeId(Long sourceResumeId);
 
     @Select("SELECT " + COLUMNS + " FROM resume WHERE status = 'SUBMITTED' ORDER BY update_time ASC")
     List<Resume> findSubmitted();
 
-    @Insert("INSERT INTO resume(student_id, title, name, phone, email, target_position, education, experience, skills, awards, self_evaluation, status, teacher_comment) VALUES(#{studentId}, #{title}, #{name}, #{phone}, #{email}, #{targetPosition}, #{education}, #{experience}, #{skills}, #{awards}, #{selfEvaluation}, #{status}, #{teacherComment})")
+    @Select("SELECT COUNT(*) FROM resume")
+    int countAll();
+
+    @Select("SELECT COUNT(*) FROM resume WHERE frozen = 1")
+    int countFrozen();
+
+    @Insert("INSERT INTO resume(student_id, source_resume_id, generated_by_teacher_id, version_type, title, name, phone, email, target_position, education, experience, skills, awards, self_evaluation, status, teacher_comment, frozen, freeze_reason) VALUES(#{studentId}, #{sourceResumeId}, #{generatedByTeacherId}, #{versionType}, #{title}, #{name}, #{phone}, #{email}, #{targetPosition}, #{education}, #{experience}, #{skills}, #{awards}, #{selfEvaluation}, #{status}, #{teacherComment}, #{frozen}, #{freezeReason})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(Resume resume);
 
@@ -39,6 +51,12 @@ public interface ResumeMapper {
 
     @Update("UPDATE resume SET status = #{status}, teacher_comment = #{teacherComment}, update_time = CURRENT_TIMESTAMP WHERE id = #{id}")
     int review(@Param("id") Long id, @Param("status") String status, @Param("teacherComment") String teacherComment);
+
+    @Update("UPDATE resume SET frozen = 1, freeze_reason = #{reason}, update_time = CURRENT_TIMESTAMP WHERE id = #{id}")
+    int freeze(@Param("id") Long id, @Param("reason") String reason);
+
+    @Update("UPDATE resume SET frozen = 0, freeze_reason = NULL, update_time = CURRENT_TIMESTAMP WHERE id = #{id}")
+    int unfreeze(Long id);
 
     @Delete("DELETE FROM resume WHERE id = #{id}")
     int deleteById(Long id);

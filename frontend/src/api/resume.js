@@ -21,6 +21,13 @@ export function getResumeByIdApi(id) {
   })
 }
 
+export function getResumeVersionsApi(id) {
+  return request({
+    url: `/resume/${id}/versions`,
+    method: "get"
+  })
+}
+
 export function createResumeApi(data) {
   return request({
     url: "/resume",

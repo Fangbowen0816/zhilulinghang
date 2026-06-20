@@ -27,6 +27,9 @@
         <el-button type="primary" class="login-btn" @click="handleLogin">
           登录
         </el-button>
+        <el-button class="login-btn secondary-btn" @click="router.push('/register')">
+          注册账号
+        </el-button>
       </el-form>
     </el-card>
   </div>
@@ -92,6 +95,10 @@ const handleLogin = async () => {
 
 .login-btn {
   width: 100%;
+}
+
+.secondary-btn {
+  margin: 12px 0 0;
 }
 </style>
 

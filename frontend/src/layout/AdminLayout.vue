@@ -12,13 +12,20 @@
       >
         <el-menu-item index="/admin/home">管理员首页</el-menu-item>
         <el-menu-item index="/admin/users">用户管理</el-menu-item>
+        <el-menu-item index="/admin/teachers">教师管理</el-menu-item>
         <el-menu-item index="/admin/resumes">简历管理</el-menu-item>
+        <el-menu-item index="/admin/teacher-approvals">教师审核</el-menu-item>
+        <el-menu-item index="/admin/review-requests">审核请求</el-menu-item>
+        <el-menu-item index="/admin/withdraw-requests">撤回处理</el-menu-item>
+        <el-menu-item index="/admin/review-records">审核记录</el-menu-item>
+        <el-menu-item index="/admin/settings">平台设置</el-menu-item>
+        <el-menu-item index="/admin/action-logs">操作日志</el-menu-item>
       </el-menu>
     </el-aside>
 
     <el-container>
       <el-header class="header">
-        <span>学生中心</span>
+        <span>管理中心</span>
         <el-button type="danger" size="small" @click="handleLogout">
           退出登录
         </el-button>
