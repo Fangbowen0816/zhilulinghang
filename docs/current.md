@@ -123,6 +123,7 @@ text
 
 
 POST /api/auth/login
+POST /api/auth/register
 GET  /api/auth/me
 
 登录逻辑是：
@@ -131,6 +132,11 @@ GET  /api/auth/me
 检查前端选择的角色是否匹配数据库角色
 生成 token
 返回 token/userId/username/role
+注册逻辑是：
+只允许注册 STUDENT 或 TEACHER
+用户名不能重复
+教师注册后自动创建 teacher_profile
+教师注册后的资料默认为待管理员审核，且不能接收请求
 ResumeController 提供学生简历接口：
 text
 
@@ -331,3 +337,381 @@ summary
 
 如果 DeepSeek 未配置、调用失败、返回格式错误或内容为空，后端会返回错误信息，前端弹出失败提示，不会修改当前简历表单。
 DeepSeek 调用失败时，后端会按 HTTP 状态码返回更明确的错误信息，例如 API Key 无效、权限不足、额度或频率限制、请求参数错误、网络超时或 DeepSeek 服务端异常。
+
+
+教师资料与注册
+当前已完成教师审核体系改造的第一阶段。
+详细计划保存在：
+text
+
+
+
+docs/teacher_review_plan.md
+
+新增数据库表：
+text
+
+
+
+teacher_profile
+
+教师资料字段包括：
+text
+
+
+
+id
+teacher_id
+display_name
+department
+title
+bio
+expertise_tags
+available
+approval_status
+approval_comment
+approved_by
+approved_time
+create_time
+update_time
+
+教师注册后会自动创建 teacher_profile：
+text
+
+
+
+available = false
+approval_status = PENDING
+
+只有管理员审核通过后，教师才能开启接收请求。
+
+新增接口：
+text
+
+
+
+GET /api/teachers
+GET /api/teachers/{id}
+GET /api/teacher/profile
+PUT /api/teacher/profile
+
+GET  /api/admin/teacher-profiles
+GET  /api/admin/teacher-profiles/pending
+POST /api/admin/teacher-profiles/{id}/approve
+POST /api/admin/teacher-profiles/{id}/reject
+
+新增前端页面：
+text
+
+
+
+/register
+/teacher/profile
+/admin/teacher-approvals
+
+本阶段没有实现审核请求、教师接收/拒绝请求、教师返回新简历和撤回流程，这些属于后续阶段。
+
+
+审核请求
+当前已完成教师审核体系改造的第二阶段。
+新增数据库表：
+text
+
+
+
+review_request
+
+review_request 字段包括：
+text
+
+
+
+id
+source_resume_id
+student_id
+teacher_id
+assign_mode
+status
+student_message
+teacher_reply
+decline_reason
+decline_suggestion
+create_time
+update_time
+
+assign_mode 当前支持：
+text
+
+
+
+SELECTED
+RANDOM
+
+status 当前支持：
+text
+
+
+
+PENDING
+ACCEPTED
+DECLINED
+CANCELLED
+COMPLETED
+
+当前已实现流程：
+text
+
+
+
+学生在简历编辑页点击提交审核
+→ 选择指定教师或系统随机分配
+→ 创建 review_request
+→ 教师在教师端审核请求页面查看请求
+→ 教师接受或拒绝请求
+→ 学生在审核请求页面查看状态
+
+规则：
+随机分配第一版只分配 1 位教师。
+只有 approval_status = APPROVED 且 available = true 的教师可以被选择或随机分配。
+同一份源简历不能重复发送给同一教师。
+教师拒绝请求时必须填写拒绝理由和建议。
+
+新增接口：
+text
+
+
+
+POST /api/review-requests
+GET  /api/review-requests/student
+GET  /api/review-requests/teacher
+GET  /api/review-requests/{id}
+POST /api/review-requests/{id}/accept
+POST /api/review-requests/{id}/decline
+
+新增前端页面：
+text
+
+
+
+/student/review-requests
+/teacher/requests
+
+本阶段没有实现教师返回新简历、审核记录 review_record、学生撤回申请和管理员处理，这些属于后续阶段。
+
+
+教师返回新简历
+当前已完成教师审核体系改造的第三阶段。
+resume 表新增版本来源字段：
+text
+
+
+
+source_resume_id
+generated_by_teacher_id
+version_type
+
+version_type 当前主要使用：
+text
+
+
+
+ORIGINAL
+TEACHER_RETURNED
+
+新增数据库表：
+text
+
+
+
+review_record
+
+review_record 字段包括：
+text
+
+
+
+id
+request_id
+source_resume_id
+returned_resume_id
+student_id
+teacher_id
+action
+comment
+teacher_deleted
+create_time
+
+当前流程：
+text
+
+
+
+教师接受审核请求
+→ 教师基于源简历编辑返回版本
+→ 提交返回
+→ 系统创建新的 resume 实体
+→ 原简历不被覆盖
+→ review_request.status = COMPLETED
+→ 写入 review_record
+→ 学生可以查看返回版本并继续编辑
+
+新增接口：
+text
+
+
+
+POST /api/review-requests/{id}/return
+GET  /api/review-records/student
+GET  /api/review-records/teacher
+GET  /api/resume/{id}/versions
+
+新增前端能力：
+教师端 /teacher/requests 中，已接受的请求可以点击“返回”生成新的简历版本。
+学生端简历编辑页可以查看某份源简历的教师返回版本。
+学生端 /student/review-requests 可以查看审核记录，并进入返回版本继续编辑。
+
+本阶段没有实现学生撤回申请、管理员处理撤回、简历冻结和教师端隐藏审核记录，这些属于第四阶段。
+
+
+撤回与记录管理
+当前已完成教师审核体系改造的第四阶段。
+
+review_request 新增字段：
+text
+
+
+
+withdraw_reason
+admin_decision
+admin_comment
+admin_id
+admin_time
+
+resume 新增字段：
+text
+
+
+
+frozen
+freeze_reason
+
+新增接口：
+text
+
+
+
+POST /api/review-requests/{id}/withdraw
+GET  /api/admin/withdraw-requests
+POST /api/admin/withdraw-requests/{id}/approve
+POST /api/admin/withdraw-requests/{id}/reject
+POST /api/review-records/{id}/hide
+
+当前流程：
+text
+
+
+
+教师接受审核请求
+→ 学生可以申请撤回
+→ 学生填写撤回原因
+→ 请求进入 WITHDRAW_PENDING
+→ 源简历被冻结
+→ 管理员同意或拒绝撤回
+→ 源简历解冻
+
+冻结规则：
+撤回处理中，源简历不能编辑、删除、提交或再次发起审核请求。
+
+教师端记录管理：
+教师可以在审核历史页面删除自己的审核记录。
+该删除只是教师端隐藏，服务器数据仍保留，管理员视图后续仍可查看。
+
+新增前端页面：
+text
+
+
+
+/admin/withdraw-requests
+/teacher/history
+
+
+管理员后台
+当前已完成管理员后台第一轮建设。
+详细计划保存在：
+text
+
+
+
+docs/admin_backend_plan.md
+
+管理端当前页面包括：
+text
+
+
+
+/admin/home
+/admin/users
+/admin/teachers
+/admin/teacher-approvals
+/admin/resumes
+/admin/review-requests
+/admin/withdraw-requests
+/admin/review-records
+/admin/settings
+/admin/action-logs
+
+/admin/home 是管理员工作台，展示学生、教师、待审核教师、简历、冻结简历、审核请求、撤回待处理、审核记录等统计。
+
+/admin/teacher-approvals 用于教师资料审核，只显示待审核教师，审核通过或拒绝后从列表移除。
+
+/admin/teachers 用于全量教师管理，支持按审核状态、接收请求状态和关键词筛选，并支持管理员通过开关开放或关闭教师接收请求权限；只有审核通过的教师才能被开启。
+
+/admin/review-requests 用于全局查看审核请求，支持状态、分配方式和关键词筛选，并可查看请求详情。
+
+/admin/review-records 用于全局查看审核记录，包括教师端已经隐藏的记录，并支持 CSV 导出。
+
+/admin/settings 用于管理 platform_setting，支持新增设置、编辑设置值和说明。
+
+/admin/action-logs 用于查看最近的管理员操作日志，支持关键词搜索。
+
+新增管理员接口：
+text
+
+
+
+GET  /api/admin/dashboard
+GET  /api/admin/manage/users
+POST /api/admin/manage/users/{id}/enabled
+POST /api/admin/manage/users/{id}/password
+GET  /api/admin/manage/teachers
+POST /api/admin/manage/teachers/{id}/available
+GET  /api/admin/manage/resumes
+GET  /api/admin/manage/review-requests
+GET  /api/admin/manage/review-records
+GET  /api/admin/manage/settings
+POST /api/admin/manage/settings
+POST /api/admin/manage/settings/{id}
+GET  /api/admin/manage/action-logs
+
+管理员后台第二轮已完成：
+text
+
+
+
+admin_action_log
+platform_setting
+禁用用户
+重置密码
+
+新增数据库迁移脚本：
+text
+
+
+
+database/08_admin_controls.sql
+
+user 表新增 enabled 字段。被禁用账号不能登录，已有 token 调用后端接口时也会被拦截。
+
+已纳入管理员操作日志的动作包括：启用/禁用用户、重置密码、教师接收请求权限开关、平台设置新增/更新、教师资料审核通过/拒绝、撤回请求同意/拒绝。
+
+本轮仍未实现强制修改审核请求状态、付费交易和评价系统。

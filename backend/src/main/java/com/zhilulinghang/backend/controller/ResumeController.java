@@ -51,12 +51,20 @@ public class ResumeController {
         return requireOwnedResume(id, user);
     }
 
+    @GetMapping("/{id}/versions")
+    public List<Resume> getVersions(@PathVariable Long id) {
+        AuthUser user = requireRole("STUDENT", "ADMIN");
+        Resume source = requireOwnedResume(id, user);
+        return resumeMapper.findVersionsBySourceResumeId(source.getId());
+    }
+
     @PostMapping
     public Resume create(@RequestBody ResumeRequest request) {
         AuthUser user = requireRole("STUDENT", "ADMIN");
         Resume resume = toResume(request);
         resume.setStudentId(user.getId());
         resume.setStatus("DRAFT");
+        resume.setFrozen(false);
         resumeMapper.insert(resume);
         return resumeMapper.findById(resume.getId());
     }
@@ -65,6 +73,7 @@ public class ResumeController {
     public Resume update(@PathVariable Long id, @RequestBody ResumeRequest request) {
         AuthUser user = requireRole("STUDENT", "ADMIN");
         Resume existing = requireOwnedResume(id, user);
+        requireNotFrozen(existing);
         Resume resume = toResume(request);
         resume.setId(existing.getId());
         resumeMapper.updateContent(resume);
@@ -74,7 +83,8 @@ public class ResumeController {
     @PostMapping("/{id}/submit")
     public Resume submit(@PathVariable Long id) {
         AuthUser user = requireRole("STUDENT", "ADMIN");
-        requireOwnedResume(id, user);
+        Resume resume = requireOwnedResume(id, user);
+        requireNotFrozen(resume);
         resumeMapper.submit(id);
         return resumeMapper.findById(id);
     }
@@ -82,7 +92,8 @@ public class ResumeController {
     @DeleteMapping("/{id}")
     public Map<String, Object> delete(@PathVariable Long id) {
         AuthUser user = requireRole("STUDENT", "ADMIN");
-        requireOwnedResume(id, user);
+        Resume resume = requireOwnedResume(id, user);
+        requireNotFrozen(resume);
         resumeMapper.deleteById(id);
         Map<String, Object> result = new HashMap<>();
         result.put("deleted", true);
@@ -129,6 +140,7 @@ public class ResumeController {
 
     private Resume toResume(ResumeRequest request) {
         Resume resume = new Resume();
+        resume.setVersionType("ORIGINAL");
         resume.setTitle(defaultTitle(request));
         resume.setName(request.getName());
         resume.setPhone(request.getPhone());
@@ -140,6 +152,12 @@ public class ResumeController {
         resume.setAwards(request.getAwards());
         resume.setSelfEvaluation(request.getSelfEvaluation());
         return resume;
+    }
+
+    private void requireNotFrozen(Resume resume) {
+        if (Boolean.TRUE.equals(resume.getFrozen())) {
+            throw new IllegalStateException("该简历正在撤回处理中，暂时不能操作");
+        }
     }
 
     private String defaultTitle(ResumeRequest request) {

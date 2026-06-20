@@ -72,9 +72,10 @@
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="saveResume">保存草稿</el-button>
-        <el-button type="success" @click="submitResume">提交审核</el-button>
+        <el-button type="success" @click="openReviewRequestDialog">提交审核</el-button>
         <el-button type="warning" :loading="polishLoading" @click="polishResume">AI 润色</el-button>
         <el-button @click="previewDialogVisible = true">预览</el-button>
+        <el-button :disabled="!resumeId" @click="router.push(`/student/resume/${resumeId}/versions`)">返回版本</el-button>
       </el-form-item>
     </el-form>
 
@@ -161,6 +162,45 @@
         <el-button type="primary" @click="previewDialogVisible = false">关闭</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="reviewRequestDialogVisible" title="提交给教师审核" width="720px">
+      <el-form label-width="90px">
+        <el-form-item label="分配方式">
+          <el-radio-group v-model="reviewRequestForm.assignMode">
+            <el-radio-button label="SELECTED">指定教师</el-radio-button>
+            <el-radio-button label="RANDOM">随机分配</el-radio-button>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item v-if="reviewRequestForm.assignMode === 'SELECTED'" label="选择教师">
+          <el-select
+            v-model="reviewRequestForm.teacherIds"
+            multiple
+            filterable
+            placeholder="请选择一位或多位教师"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="teacher in availableTeachers"
+              :key="teacher.teacherId"
+              :label="`${teacher.displayName}｜${teacher.expertiseTags || '未填写擅长方向'}`"
+              :value="teacher.teacherId"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="请求说明">
+          <el-input
+            v-model="reviewRequestForm.studentMessage"
+            type="textarea"
+            :rows="4"
+            placeholder="可说明希望教师重点关注的问题"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="reviewRequestDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="createReviewRequest">确认提交</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -173,9 +213,10 @@ import {
   deleteResumeApi,
   getMyResumesApi,
   polishResumeApi,
-  submitResumeApi,
   updateResumeApi
 } from "../../api/resume"
+import { getAvailableTeachersApi } from "../../api/teacher"
+import { createReviewRequestsApi } from "../../api/reviewRequest"
 
 const route = useRoute()
 const router = useRouter()
@@ -187,6 +228,8 @@ const polishGoal = ref("")
 const polishLoading = ref(false)
 const polishDialogVisible = ref(false)
 const previewDialogVisible = ref(false)
+const reviewRequestDialogVisible = ref(false)
+const availableTeachers = ref([])
 
 const form = reactive({
   title: "",
@@ -213,6 +256,12 @@ const polishedResume = reactive({
   awards: "",
   selfEvaluation: "",
   summary: ""
+})
+
+const reviewRequestForm = reactive({
+  assignMode: "SELECTED",
+  teacherIds: [],
+  studentMessage: ""
 })
 
 const statusMap = {
@@ -317,7 +366,7 @@ async function saveResume() {
   ElMessage.success("简历已保存")
 }
 
-async function submitResume() {
+async function openReviewRequestDialog() {
   const validationMessage = validateSubmit()
   if (validationMessage) {
     ElMessage.warning(validationMessage)
@@ -326,10 +375,31 @@ async function submitResume() {
   ensureTitle()
   if (!resumeId.value) {
     await saveResume()
+    if (!resumeId.value) {
+      return
+    }
   }
-  const resume = await submitResumeApi(resumeId.value)
-  await loadResumes(resume.id)
-  ElMessage.success("已提交教师审核")
+  availableTeachers.value = await getAvailableTeachersApi()
+  reviewRequestForm.assignMode = "SELECTED"
+  reviewRequestForm.teacherIds = []
+  reviewRequestForm.studentMessage = ""
+  reviewRequestDialogVisible.value = true
+}
+
+async function createReviewRequest() {
+  if (reviewRequestForm.assignMode === "SELECTED" && reviewRequestForm.teacherIds.length === 0) {
+    ElMessage.warning("请选择至少一位教师")
+    return
+  }
+  const requests = await createReviewRequestsApi({
+    sourceResumeId: resumeId.value,
+    assignMode: reviewRequestForm.assignMode,
+    teacherIds: reviewRequestForm.teacherIds,
+    studentMessage: reviewRequestForm.studentMessage
+  })
+  reviewRequestDialogVisible.value = false
+  await loadResumes(resumeId.value)
+  ElMessage.success(`已创建 ${requests.length} 个审核请求`)
 }
 
 async function deleteResume() {

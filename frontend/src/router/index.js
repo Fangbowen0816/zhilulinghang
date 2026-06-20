@@ -23,6 +23,10 @@ const routes = [
     component: () => import("../views/login/LoginView.vue")
   },
   {
+    path: "/register",
+    component: () => import("../views/login/RegisterView.vue")
+  },
+  {
     path: "/admin",
     component: () => import("../layout/AdminLayout.vue"),
     redirect: "/admin/home",
@@ -36,8 +40,36 @@ const routes = [
         component: () => import("../views/admin/AdminUsersView.vue")
       },
       {
+        path: "teachers",
+        component: () => import("../views/admin/AdminTeachersView.vue")
+      },
+      {
         path: "resumes",
         component: () => import("../views/admin/AdminResumeView.vue")
+      },
+      {
+        path: "teacher-approvals",
+        component: () => import("../views/admin/AdminTeacherApprovalsView.vue")
+      },
+      {
+        path: "withdraw-requests",
+        component: () => import("../views/admin/AdminWithdrawRequestsView.vue")
+      },
+      {
+        path: "review-requests",
+        component: () => import("../views/admin/AdminReviewRequestsView.vue")
+      },
+      {
+        path: "review-records",
+        component: () => import("../views/admin/AdminReviewRecordsView.vue")
+      },
+      {
+        path: "settings",
+        component: () => import("../views/admin/AdminSettingsView.vue")
+      },
+      {
+        path: "action-logs",
+        component: () => import("../views/admin/AdminActionLogsView.vue")
       }
     ]
   },
@@ -59,8 +91,16 @@ const routes = [
         component: () => import("../views/student/ResumeEditView.vue")
       },
       {
+        path: "resume/:id/versions",
+        component: () => import("../views/student/ResumeVersionsView.vue")
+      },
+      {
         path: "resume/feedback",
         component: () => import("../views/student/ResumeFeedbackView.vue")
+      },
+      {
+        path: "review-requests",
+        component: () => import("../views/student/MyReviewRequestsView.vue")
       }
     ]
   },
@@ -80,6 +120,18 @@ const routes = [
       {
         path: "review/:id",
         component: () => import("../views/teacher/ReviewDetailView.vue")
+      },
+      {
+        path: "profile",
+        component: () => import("../views/teacher/TeacherProfileView.vue")
+      },
+      {
+        path: "requests",
+        component: () => import("../views/teacher/TeacherRequestsView.vue")
+      },
+      {
+        path: "history",
+        component: () => import("../views/teacher/TeacherHistoryView.vue")
       }
     ]
   }
@@ -94,12 +146,12 @@ router.beforeEach((to, from, next) => {
   const token = localStorage.getItem("token")
   const role = localStorage.getItem("role")
 
-  if (!token && to.path !== "/login") {
+  if (!token && to.path !== "/login" && to.path !== "/register") {
     next("/login")
     return
   }
 
-  if (token && to.path === "/login") {
+  if (token && (to.path === "/login" || to.path === "/register")) {
     next(getHomePathByRole(role))
     return
   }

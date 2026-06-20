@@ -5,6 +5,9 @@ import java.time.LocalDateTime;
 public class Resume {
     private Long id;
     private Long studentId;
+    private Long sourceResumeId;
+    private Long generatedByTeacherId;
+    private String versionType;
     private String title;
     private String name;
     private String phone;
@@ -17,6 +20,8 @@ public class Resume {
     private String selfEvaluation;
     private String status;
     private String teacherComment;
+    private Boolean frozen;
+    private String freezeReason;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 
@@ -34,6 +39,30 @@ public class Resume {
 
     public void setStudentId(Long studentId) {
         this.studentId = studentId;
+    }
+
+    public Long getSourceResumeId() {
+        return sourceResumeId;
+    }
+
+    public void setSourceResumeId(Long sourceResumeId) {
+        this.sourceResumeId = sourceResumeId;
+    }
+
+    public Long getGeneratedByTeacherId() {
+        return generatedByTeacherId;
+    }
+
+    public void setGeneratedByTeacherId(Long generatedByTeacherId) {
+        this.generatedByTeacherId = generatedByTeacherId;
+    }
+
+    public String getVersionType() {
+        return versionType;
+    }
+
+    public void setVersionType(String versionType) {
+        this.versionType = versionType;
     }
 
     public String getTitle() {
@@ -130,6 +159,22 @@ public class Resume {
 
     public void setTeacherComment(String teacherComment) {
         this.teacherComment = teacherComment;
+    }
+
+    public Boolean getFrozen() {
+        return frozen;
+    }
+
+    public void setFrozen(Boolean frozen) {
+        this.frozen = frozen;
+    }
+
+    public String getFreezeReason() {
+        return freezeReason;
+    }
+
+    public void setFreezeReason(String freezeReason) {
+        this.freezeReason = freezeReason;
     }
 
     public LocalDateTime getCreateTime() {

@@ -11,13 +11,16 @@
         active-text-color="#ffd04b"
       >
         <el-menu-item index="/teacher/home">教师首页</el-menu-item>
+        <el-menu-item index="/teacher/profile">个人资料</el-menu-item>
+        <el-menu-item index="/teacher/requests">审核请求</el-menu-item>
+        <el-menu-item index="/teacher/history">审核历史</el-menu-item>
         <el-menu-item index="/teacher/review">待审核简历</el-menu-item>
       </el-menu>
     </el-aside>
 
     <el-container>
       <el-header class="header">
-        <span>学生中心</span>
+        <span>教师中心</span>
         <el-button type="danger" size="small" @click="handleLogout">
           退出登录
         </el-button>
