@@ -29,14 +29,45 @@
       </el-table-column>
       <el-table-column prop="createTime" label="创建时间" width="190" />
     </el-table>
+
+    <h2 class="section-title">批注监管</h2>
+    <el-table :data="filteredAnnotations" border empty-text="暂无批注">
+      <el-table-column prop="id" label="ID" width="80" />
+      <el-table-column prop="requestId" label="请求ID" width="90" />
+      <el-table-column prop="resumeTitle" label="简历" />
+      <el-table-column prop="teacherDisplayName" label="教师" width="150" />
+      <el-table-column prop="studentUsername" label="学生" width="130" />
+      <el-table-column prop="fieldName" label="字段" width="130" />
+      <el-table-column prop="markType" label="类型" width="120" />
+      <el-table-column prop="content" label="批注内容" />
+      <el-table-column prop="updateTime" label="更新时间" width="190" />
+    </el-table>
+
+    <h2 class="section-title">评分监管</h2>
+    <el-table :data="filteredScores" border empty-text="暂无评分">
+      <el-table-column prop="id" label="ID" width="80" />
+      <el-table-column prop="requestId" label="请求ID" width="90" />
+      <el-table-column prop="resumeTitle" label="简历" />
+      <el-table-column prop="teacherDisplayName" label="教师" width="150" />
+      <el-table-column prop="studentUsername" label="学生" width="130" />
+      <el-table-column prop="score" label="分数" width="90" />
+      <el-table-column prop="remark" label="评分说明" />
+      <el-table-column prop="updateTime" label="更新时间" width="190" />
+    </el-table>
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, ref } from "vue"
-import { getAdminReviewRecordsApi } from "../../api/admin"
+import {
+  getAdminResumeAnnotationsApi,
+  getAdminResumeScoresApi,
+  getAdminReviewRecordsApi
+} from "../../api/admin"
 
 const records = ref([])
+const annotations = ref([])
+const scores = ref([])
 const keyword = ref("")
 const hiddenFilter = ref("")
 
@@ -49,10 +80,26 @@ const filteredRecords = computed(() => {
   })
 })
 
+const filteredAnnotations = computed(() => {
+  return annotations.value.filter(annotation => {
+    const text = `${annotation.resumeTitle || ""}${annotation.teacherDisplayName || ""}${annotation.studentUsername || ""}${annotation.fieldName || ""}${annotation.content || ""}`
+    return !keyword.value || text.includes(keyword.value)
+  })
+})
+
+const filteredScores = computed(() => {
+  return scores.value.filter(score => {
+    const text = `${score.resumeTitle || ""}${score.teacherDisplayName || ""}${score.studentUsername || ""}${score.remark || ""}`
+    return !keyword.value || text.includes(keyword.value)
+  })
+})
+
 onMounted(loadRecords)
 
 async function loadRecords() {
   records.value = await getAdminReviewRecordsApi()
+  annotations.value = await getAdminResumeAnnotationsApi()
+  scores.value = await getAdminResumeScoresApi()
 }
 
 function exportCsv() {
@@ -104,5 +151,9 @@ function exportCsv() {
 
 h2 {
   margin: 0;
+}
+
+.section-title {
+  margin: 24px 0 16px;
 }
 </style>

@@ -15,6 +15,7 @@
         <el-menu-item index="/teacher/requests">审核请求</el-menu-item>
         <el-menu-item index="/teacher/history">审核历史</el-menu-item>
         <el-menu-item index="/teacher/review">待审核简历</el-menu-item>
+        <el-menu-item index="/teacher/notifications">站内通知</el-menu-item>
       </el-menu>
     </el-aside>
 

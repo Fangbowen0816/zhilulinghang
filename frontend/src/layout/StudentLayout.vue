@@ -12,8 +12,11 @@
       >
         <el-menu-item index="/student/home">学生首页</el-menu-item>
         <el-menu-item index="/student/resume/edit">制作简历</el-menu-item>
+        <el-menu-item index="/student/jobs">岗位列表</el-menu-item>
+        <el-menu-item index="/student/applications">投递记录</el-menu-item>
         <el-menu-item index="/student/review-requests">审核请求</el-menu-item>
         <el-menu-item index="/student/resume/feedback">查看反馈</el-menu-item>
+        <el-menu-item index="/student/notifications">站内通知</el-menu-item>
       </el-menu>
     </el-aside>
 

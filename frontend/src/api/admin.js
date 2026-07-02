@@ -73,6 +73,20 @@ export function getAdminReviewRecordsApi() {
   })
 }
 
+export function getAdminResumeAnnotationsApi() {
+  return request({
+    url: "/admin/manage/resume-annotations",
+    method: "get"
+  })
+}
+
+export function getAdminResumeScoresApi() {
+  return request({
+    url: "/admin/manage/resume-scores",
+    method: "get"
+  })
+}
+
 export function getAdminSettingsApi() {
   return request({
     url: "/admin/manage/settings",

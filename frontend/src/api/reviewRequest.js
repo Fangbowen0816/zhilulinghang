@@ -61,6 +61,43 @@ export function withdrawReviewRequestApi(id, reason) {
   })
 }
 
+export function getReviewAnnotationsApi(id) {
+  return request({
+    url: `/review-requests/${id}/annotations`,
+    method: "get"
+  })
+}
+
+export function createReviewAnnotationApi(id, data) {
+  return request({
+    url: `/review-requests/${id}/annotations`,
+    method: "post",
+    data
+  })
+}
+
+export function deleteReviewAnnotationApi(id) {
+  return request({
+    url: `/resume-annotations/${id}`,
+    method: "delete"
+  })
+}
+
+export function getReviewScoreApi(id) {
+  return request({
+    url: `/review-requests/${id}/score`,
+    method: "get"
+  })
+}
+
+export function saveReviewScoreApi(id, data) {
+  return request({
+    url: `/review-requests/${id}/score`,
+    method: "post",
+    data
+  })
+}
+
 export function getAdminWithdrawRequestsApi() {
   return request({
     url: "/admin/withdraw-requests",

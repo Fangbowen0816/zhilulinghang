@@ -31,6 +31,25 @@
         </button>
       </div>
     </el-scrollbar>
+
+    <section class="reminder-section">
+      <div class="section-header">
+        <h2>待提醒事项</h2>
+        <el-button text type="primary" @click="router.push('/student/applications')">查看投递记录</el-button>
+      </div>
+      <el-empty v-if="!reminderLoading && reminders.length === 0" description="暂无待提醒事项" />
+      <el-table v-else v-loading="reminderLoading" :data="reminders" border>
+        <el-table-column prop="jobTitle" label="岗位" />
+        <el-table-column prop="company" label="公司" width="150" />
+        <el-table-column label="类型" width="100">
+          <template #default="{ row }">{{ reminderTypeMap[row.remindType] || row.remindType }}</template>
+        </el-table-column>
+        <el-table-column prop="content" label="内容" />
+        <el-table-column label="时间" width="170">
+          <template #default="{ row }">{{ formatTime(row.remindTime) }}</template>
+        </el-table-column>
+      </el-table>
+    </section>
   </div>
 </template>
 
@@ -38,11 +57,14 @@
 import { onMounted, ref } from "vue"
 import { useRouter } from "vue-router"
 import { ElMessage } from "element-plus"
+import { getPendingApplicationRemindersApi } from "../../api/application"
 import { getMyResumesApi } from "../../api/resume"
 
 const router = useRouter()
 const loading = ref(false)
+const reminderLoading = ref(false)
 const resumes = ref([])
+const reminders = ref([])
 
 const statusMap = {
   DRAFT: "草稿",
@@ -51,7 +73,17 @@ const statusMap = {
   REJECTED: "已退回"
 }
 
-onMounted(loadResumes)
+const reminderTypeMap = {
+  FOLLOW_UP: "跟进",
+  WRITTEN_TEST: "笔试",
+  INTERVIEW: "面试",
+  GENERAL: "通用"
+}
+
+onMounted(() => {
+  loadResumes()
+  loadReminders()
+})
 
 async function loadResumes() {
   loading.value = true
@@ -59,6 +91,15 @@ async function loadResumes() {
     resumes.value = await getMyResumesApi()
   } finally {
     loading.value = false
+  }
+}
+
+async function loadReminders() {
+  reminderLoading.value = true
+  try {
+    reminders.value = await getPendingApplicationRemindersApi()
+  } finally {
+    reminderLoading.value = false
   }
 }
 
@@ -156,5 +197,20 @@ function formatTime(value) {
   gap: 12px;
   color: #667085;
   font-size: 13px;
+}
+
+.reminder-section {
+  margin-top: 24px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.section-header h2 {
+  margin: 0;
 }
 </style>
