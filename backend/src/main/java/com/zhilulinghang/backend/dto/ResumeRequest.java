@@ -1,6 +1,7 @@
 package com.zhilulinghang.backend.dto;
 
 public class ResumeRequest {
+    private Long templateId;
     private String title;
     private String name;
     private String phone;
@@ -11,6 +12,14 @@ public class ResumeRequest {
     private String skills;
     private String awards;
     private String selfEvaluation;
+
+    public Long getTemplateId() {
+        return templateId;
+    }
+
+    public void setTemplateId(Long templateId) {
+        this.templateId = templateId;
+    }
 
     public String getTitle() {
         return title;

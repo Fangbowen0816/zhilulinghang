@@ -6,6 +6,8 @@ import com.zhilulinghang.backend.dto.UserEnabledRequest;
 import com.zhilulinghang.backend.mapper.AdminActionLogMapper;
 import com.zhilulinghang.backend.mapper.PlatformSettingMapper;
 import com.zhilulinghang.backend.mapper.ResumeMapper;
+import com.zhilulinghang.backend.mapper.ResumeAnnotationMapper;
+import com.zhilulinghang.backend.mapper.ResumeScoreMapper;
 import com.zhilulinghang.backend.mapper.ReviewRecordMapper;
 import com.zhilulinghang.backend.mapper.ReviewRequestMapper;
 import com.zhilulinghang.backend.mapper.TeacherProfileMapper;
@@ -13,6 +15,8 @@ import com.zhilulinghang.backend.mapper.UserMapper;
 import com.zhilulinghang.backend.model.AdminActionLog;
 import com.zhilulinghang.backend.model.PlatformSetting;
 import com.zhilulinghang.backend.model.Resume;
+import com.zhilulinghang.backend.model.ResumeAnnotation;
+import com.zhilulinghang.backend.model.ResumeScore;
 import com.zhilulinghang.backend.model.ReviewRecord;
 import com.zhilulinghang.backend.model.ReviewRequest;
 import com.zhilulinghang.backend.model.TeacherProfile;
@@ -34,15 +38,19 @@ import java.util.Map;
 public class AdminManageController {
     private final UserMapper userMapper;
     private final ResumeMapper resumeMapper;
+    private final ResumeAnnotationMapper resumeAnnotationMapper;
+    private final ResumeScoreMapper resumeScoreMapper;
     private final ReviewRequestMapper reviewRequestMapper;
     private final ReviewRecordMapper reviewRecordMapper;
     private final TeacherProfileMapper teacherProfileMapper;
     private final PlatformSettingMapper platformSettingMapper;
     private final AdminActionLogMapper adminActionLogMapper;
 
-    public AdminManageController(UserMapper userMapper, ResumeMapper resumeMapper, ReviewRequestMapper reviewRequestMapper, ReviewRecordMapper reviewRecordMapper, TeacherProfileMapper teacherProfileMapper, PlatformSettingMapper platformSettingMapper, AdminActionLogMapper adminActionLogMapper) {
+    public AdminManageController(UserMapper userMapper, ResumeMapper resumeMapper, ResumeAnnotationMapper resumeAnnotationMapper, ResumeScoreMapper resumeScoreMapper, ReviewRequestMapper reviewRequestMapper, ReviewRecordMapper reviewRecordMapper, TeacherProfileMapper teacherProfileMapper, PlatformSettingMapper platformSettingMapper, AdminActionLogMapper adminActionLogMapper) {
         this.userMapper = userMapper;
         this.resumeMapper = resumeMapper;
+        this.resumeAnnotationMapper = resumeAnnotationMapper;
+        this.resumeScoreMapper = resumeScoreMapper;
         this.reviewRequestMapper = reviewRequestMapper;
         this.reviewRecordMapper = reviewRecordMapper;
         this.teacherProfileMapper = teacherProfileMapper;
@@ -149,6 +157,18 @@ public class AdminManageController {
     public List<ReviewRecord> reviewRecords() {
         requireAdmin();
         return reviewRecordMapper.findAll();
+    }
+
+    @GetMapping("/resume-annotations")
+    public List<ResumeAnnotation> resumeAnnotations() {
+        requireAdmin();
+        return resumeAnnotationMapper.findAll();
+    }
+
+    @GetMapping("/resume-scores")
+    public List<ResumeScore> resumeScores() {
+        requireAdmin();
+        return resumeScoreMapper.findAll();
     }
 
     @GetMapping("/settings")

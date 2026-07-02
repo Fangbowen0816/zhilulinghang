@@ -7,6 +7,7 @@ public class Resume {
     private Long studentId;
     private Long sourceResumeId;
     private Long generatedByTeacherId;
+    private Long templateId;
     private String versionType;
     private String title;
     private String name;
@@ -55,6 +56,14 @@ public class Resume {
 
     public void setGeneratedByTeacherId(Long generatedByTeacherId) {
         this.generatedByTeacherId = generatedByTeacherId;
+    }
+
+    public Long getTemplateId() {
+        return templateId;
+    }
+
+    public void setTemplateId(Long templateId) {
+        this.templateId = templateId;
     }
 
     public String getVersionType() {

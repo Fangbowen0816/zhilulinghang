@@ -13,7 +13,7 @@ import java.util.List;
 
 @Mapper
 public interface ResumeMapper {
-    String COLUMNS = "id, student_id, source_resume_id, generated_by_teacher_id, version_type, title, name, phone, email, target_position, education, experience, skills, awards, self_evaluation, status, teacher_comment, frozen, freeze_reason, create_time, update_time";
+    String COLUMNS = "id, student_id, source_resume_id, generated_by_teacher_id, template_id, version_type, title, name, phone, email, target_position, education, experience, skills, awards, self_evaluation, status, teacher_comment, frozen, freeze_reason, create_time, update_time";
 
     @Select("SELECT " + COLUMNS + " FROM resume WHERE student_id = #{studentId} ORDER BY update_time DESC LIMIT 1")
     Resume findLatestByStudentId(Long studentId);
@@ -39,11 +39,11 @@ public interface ResumeMapper {
     @Select("SELECT COUNT(*) FROM resume WHERE frozen = 1")
     int countFrozen();
 
-    @Insert("INSERT INTO resume(student_id, source_resume_id, generated_by_teacher_id, version_type, title, name, phone, email, target_position, education, experience, skills, awards, self_evaluation, status, teacher_comment, frozen, freeze_reason) VALUES(#{studentId}, #{sourceResumeId}, #{generatedByTeacherId}, #{versionType}, #{title}, #{name}, #{phone}, #{email}, #{targetPosition}, #{education}, #{experience}, #{skills}, #{awards}, #{selfEvaluation}, #{status}, #{teacherComment}, #{frozen}, #{freezeReason})")
+    @Insert("INSERT INTO resume(student_id, source_resume_id, generated_by_teacher_id, template_id, version_type, title, name, phone, email, target_position, education, experience, skills, awards, self_evaluation, status, teacher_comment, frozen, freeze_reason) VALUES(#{studentId}, #{sourceResumeId}, #{generatedByTeacherId}, #{templateId}, #{versionType}, #{title}, #{name}, #{phone}, #{email}, #{targetPosition}, #{education}, #{experience}, #{skills}, #{awards}, #{selfEvaluation}, #{status}, #{teacherComment}, #{frozen}, #{freezeReason})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(Resume resume);
 
-    @Update("UPDATE resume SET title = #{title}, name = #{name}, phone = #{phone}, email = #{email}, target_position = #{targetPosition}, education = #{education}, experience = #{experience}, skills = #{skills}, awards = #{awards}, self_evaluation = #{selfEvaluation}, status = 'DRAFT', update_time = CURRENT_TIMESTAMP WHERE id = #{id}")
+    @Update("UPDATE resume SET template_id = #{templateId}, title = #{title}, name = #{name}, phone = #{phone}, email = #{email}, target_position = #{targetPosition}, education = #{education}, experience = #{experience}, skills = #{skills}, awards = #{awards}, self_evaluation = #{selfEvaluation}, status = 'DRAFT', update_time = CURRENT_TIMESTAMP WHERE id = #{id}")
     int updateContent(Resume resume);
 
     @Update("UPDATE resume SET status = 'SUBMITTED', update_time = CURRENT_TIMESTAMP WHERE id = #{id}")
