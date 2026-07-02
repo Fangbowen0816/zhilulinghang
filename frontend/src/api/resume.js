@@ -28,6 +28,27 @@ export function getResumeVersionsApi(id) {
   })
 }
 
+export function getResumePreviewApi(id) {
+  return request({
+    url: `/resume/${id}/preview`,
+    method: "get"
+  })
+}
+
+export function getResumeExportApi(id) {
+  return request({
+    url: `/resume/${id}/export`,
+    method: "get"
+  })
+}
+
+export function getResumeTemplatesApi() {
+  return request({
+    url: "/resume-templates",
+    method: "get"
+  })
+}
+
 export function createResumeApi(data) {
   return request({
     url: "/resume",

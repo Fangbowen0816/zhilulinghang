@@ -22,8 +22,15 @@
       <el-table-column prop="withdrawReason" label="撤回原因" />
       <el-table-column prop="adminComment" label="管理员意见" />
       <el-table-column prop="updateTime" label="更新时间" width="190" />
-      <el-table-column label="操作" width="120">
+      <el-table-column label="操作" width="220">
         <template #default="{ row }">
+          <el-button
+            type="primary"
+            size="small"
+            @click="openFeedback(row)"
+          >
+            查看反馈
+          </el-button>
           <el-button
             type="warning"
             size="small"
@@ -70,6 +77,27 @@
         <el-button type="warning" @click="submitWithdraw">提交申请</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="feedbackDialogVisible" title="教师批注与评分" width="760px">
+      <el-descriptions :column="1" border>
+        <el-descriptions-item label="评分">
+          <template v-if="feedbackScore">{{ feedbackScore.score }} / 100</template>
+          <template v-else>暂无评分</template>
+        </el-descriptions-item>
+        <el-descriptions-item label="评分说明">{{ feedbackScore?.remark || "暂无说明" }}</el-descriptions-item>
+      </el-descriptions>
+
+      <el-table class="feedback-table" :data="feedbackAnnotations" border empty-text="暂无批注">
+        <el-table-column prop="fieldName" label="字段" width="130" />
+        <el-table-column prop="markType" label="类型" width="120" />
+        <el-table-column prop="content" label="批注内容" />
+        <el-table-column prop="updateTime" label="更新时间" width="180" />
+      </el-table>
+
+      <template #footer>
+        <el-button @click="feedbackDialogVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -77,15 +105,23 @@
 import { onMounted, ref } from "vue"
 import { useRouter } from "vue-router"
 import { ElMessage } from "element-plus"
-import { getStudentReviewRequestsApi, withdrawReviewRequestApi } from "../../api/reviewRequest"
+import {
+  getReviewAnnotationsApi,
+  getReviewScoreApi,
+  getStudentReviewRequestsApi,
+  withdrawReviewRequestApi
+} from "../../api/reviewRequest"
 import { getStudentReviewRecordsApi } from "../../api/reviewRecord"
 
 const router = useRouter()
 const requests = ref([])
 const records = ref([])
 const withdrawDialogVisible = ref(false)
+const feedbackDialogVisible = ref(false)
 const withdrawingRequest = ref(null)
 const withdrawReason = ref("")
+const feedbackAnnotations = ref([])
+const feedbackScore = ref(null)
 
 const statusMap = {
   PENDING: "待教师处理",
@@ -121,6 +157,12 @@ function openWithdraw(row) {
   withdrawDialogVisible.value = true
 }
 
+async function openFeedback(row) {
+  feedbackAnnotations.value = await getReviewAnnotationsApi(row.id)
+  feedbackScore.value = await getReviewScoreApi(row.id)
+  feedbackDialogVisible.value = true
+}
+
 async function submitWithdraw() {
   if (!withdrawReason.value) {
     ElMessage.warning("请填写撤回原因")
@@ -147,5 +189,9 @@ h2 {
 
 .section-title {
   margin: 24px 0 16px;
+}
+
+.feedback-table {
+  margin-top: 16px;
 }
 </style>

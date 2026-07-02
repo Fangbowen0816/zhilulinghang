@@ -32,6 +32,16 @@
     </div>
 
     <el-form label-width="90px" :model="form" class="resume-form">
+      <el-form-item label="简历模板">
+        <el-select v-model="form.templateId" placeholder="请选择简历模板" class="template-select">
+          <el-option
+            v-for="template in templates"
+            :key="template.id"
+            :label="`${template.name}｜${template.industry || '通用'}｜${template.jobType || '通用'}`"
+            :value="template.id"
+          />
+        </el-select>
+      </el-form-item>
       <el-form-item label="简历名称">
         <el-input v-model="form.title" placeholder="例如：Java 后端校招简历、前端实习简历" />
       </el-form-item>
@@ -70,11 +80,22 @@
           placeholder="可选，例如：面向 Java 后端校招，突出项目成果和技术能力"
         />
       </el-form-item>
+      <el-alert
+        v-if="polishError"
+        :title="polishError"
+        type="warning"
+        show-icon
+        class="polish-error"
+        @close="polishError = ''"
+      />
       <el-form-item>
         <el-button type="primary" @click="saveResume">保存草稿</el-button>
         <el-button type="success" @click="openReviewRequestDialog">提交审核</el-button>
-        <el-button type="warning" :loading="polishLoading" @click="polishResume">AI 润色</el-button>
-        <el-button @click="previewDialogVisible = true">预览</el-button>
+        <el-button type="warning" :loading="polishLoading" @click="polishResume">
+          {{ polishLoading ? "AI 润色中" : "AI 润色" }}
+        </el-button>
+        <el-button @click="previewResume">预览</el-button>
+        <el-button :disabled="!resumeId && !hasResumeContent()" @click="exportResume">导出/打印</el-button>
         <el-button :disabled="!resumeId" @click="router.push(`/student/resume/${resumeId}/versions`)">返回版本</el-button>
       </el-form-item>
     </el-form>
@@ -125,40 +146,11 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="previewDialogVisible" title="简历预览" width="760px">
-      <article class="resume-preview">
-        <header class="preview-header">
-          <h1>{{ form.name || "姓名" }}</h1>
-          <p>{{ form.targetPosition || "求职意向未填写" }}</p>
-          <div class="preview-contact">
-            <span v-if="form.phone">{{ form.phone }}</span>
-            <span v-if="form.email">{{ form.email }}</span>
-          </div>
-        </header>
-
-        <section v-if="form.education">
-          <h3>教育经历</h3>
-          <p>{{ form.education }}</p>
-        </section>
-        <section v-if="form.experience">
-          <h3>项目经历</h3>
-          <p>{{ form.experience }}</p>
-        </section>
-        <section v-if="form.skills">
-          <h3>技能</h3>
-          <p>{{ form.skills }}</p>
-        </section>
-        <section v-if="form.awards">
-          <h3>奖项证书</h3>
-          <p>{{ form.awards }}</p>
-        </section>
-        <section v-if="form.selfEvaluation">
-          <h3>自我评价</h3>
-          <p>{{ form.selfEvaluation }}</p>
-        </section>
-        <el-empty v-if="!hasResumeContent()" description="暂无可预览内容" />
-      </article>
+    <el-dialog v-model="previewDialogVisible" title="简历预览" width="860px">
+      <iframe v-if="previewHtml" class="preview-frame" :srcdoc="previewHtml" title="简历预览"></iframe>
+      <el-empty v-else description="暂无可预览内容" />
       <template #footer>
+        <el-button @click="exportResume">导出/打印</el-button>
         <el-button type="primary" @click="previewDialogVisible = false">关闭</el-button>
       </template>
     </el-dialog>
@@ -211,6 +203,9 @@ import { ElMessage, ElMessageBox } from "element-plus"
 import {
   createResumeApi,
   deleteResumeApi,
+  getResumeExportApi,
+  getResumePreviewApi,
+  getResumeTemplatesApi,
   getMyResumesApi,
   polishResumeApi,
   updateResumeApi
@@ -226,12 +221,16 @@ const status = ref("DRAFT")
 const teacherComment = ref("")
 const polishGoal = ref("")
 const polishLoading = ref(false)
+const polishError = ref("")
 const polishDialogVisible = ref(false)
 const previewDialogVisible = ref(false)
 const reviewRequestDialogVisible = ref(false)
 const availableTeachers = ref([])
+const templates = ref([])
+const previewHtml = ref("")
 
 const form = reactive({
+  templateId: null,
   title: "",
   name: "",
   phone: "",
@@ -279,7 +278,10 @@ const statusType = computed(() => {
   return "info"
 })
 
-onMounted(() => loadResumes(routeResumeId.value))
+onMounted(async () => {
+  await loadTemplates()
+  await loadResumes(routeResumeId.value)
+})
 
 const routeResumeId = computed(() => {
   const id = Number(route.params.id)
@@ -304,6 +306,13 @@ async function loadResumes(selectId) {
   }
 }
 
+async function loadTemplates() {
+  templates.value = await getResumeTemplatesApi()
+  if (!form.templateId && templates.value.length > 0) {
+    form.templateId = templates.value[0].id
+  }
+}
+
 function selectResume(id) {
   const selected = resumes.value.find(item => item.id === id)
   if (selected) {
@@ -316,6 +325,7 @@ function applyResume(resume) {
   status.value = resume.status
   teacherComment.value = resume.teacherComment || ""
   form.title = resume.title || ""
+  form.templateId = resume.templateId || templates.value[0]?.id || null
   form.name = resume.name || ""
   form.phone = resume.phone || ""
   form.email = resume.email || ""
@@ -336,6 +346,7 @@ function newResume() {
   teacherComment.value = ""
   polishGoal.value = ""
   form.title = ""
+  form.templateId = templates.value[0]?.id || null
   form.name = ""
   form.phone = ""
   form.email = ""
@@ -364,6 +375,42 @@ async function saveResume() {
     router.replace(`/student/resume/${resume.id}`)
   }
   ElMessage.success("简历已保存")
+  return resume
+}
+
+async function ensureSavedForPreview() {
+  const resume = await saveResume()
+  if (!resume?.id) {
+    return null
+  }
+  return resume.id
+}
+
+async function previewResume() {
+  const id = await ensureSavedForPreview()
+  if (!id) return
+  const result = await getResumePreviewApi(id)
+  previewHtml.value = result.html || ""
+  previewDialogVisible.value = true
+}
+
+async function exportResume() {
+  const id = await ensureSavedForPreview()
+  if (!id) return
+  const result = await getResumeExportApi(id)
+  openPrintableHtml(result.html || "")
+}
+
+function openPrintableHtml(html) {
+  const win = window.open("", "_blank")
+  if (!win) {
+    ElMessage.warning("浏览器阻止了弹窗，请允许弹窗后重试")
+    return
+  }
+  win.document.open()
+  win.document.write(html)
+  win.document.close()
+  win.focus()
 }
 
 async function openReviewRequestDialog() {
@@ -420,8 +467,10 @@ async function polishResume() {
     return
   }
 
+  polishError.value = ""
   polishLoading.value = true
   try {
+    ElMessage.info("正在调用 /api/resume/polish 生成润色建议，请稍候")
     const result = await polishResumeApi({
       ...form,
       goal: polishGoal.value
@@ -438,6 +487,11 @@ async function polishResume() {
     polishedResume.selfEvaluation = result.selfEvaluation || ""
     polishedResume.summary = result.summary || ""
     polishDialogVisible.value = true
+  } catch (error) {
+    const message = error.response?.data?.message || "AI 润色暂时不可用，请稍后重试"
+    polishError.value = message.includes("JSON")
+      ? "AI 已返回内容，但格式不够规整。系统已增强解析能力；如果仍失败，请补充更明确的润色目标后重试。"
+      : message
   } finally {
     polishLoading.value = false
   }
@@ -544,6 +598,11 @@ function ensureTitle() {
   width: 320px;
 }
 
+.template-select {
+  width: 360px;
+  max-width: 100%;
+}
+
 .option-tag {
   float: right;
   margin-top: 2px;
@@ -557,53 +616,19 @@ function ensureTitle() {
   margin-bottom: 16px;
 }
 
+.polish-error {
+  margin-bottom: 16px;
+}
+
 .polished-text {
   white-space: pre-wrap;
   line-height: 1.7;
 }
 
-.resume-preview {
-  color: #1f2937;
-}
-
-.preview-header {
-  padding-bottom: 16px;
-  border-bottom: 1px solid #e4e7ed;
-  margin-bottom: 18px;
-}
-
-.preview-header h1 {
-  margin: 0 0 8px;
-  font-size: 28px;
-  letter-spacing: 0;
-}
-
-.preview-header p {
-  margin: 0 0 8px;
-  color: #475467;
-}
-
-.preview-contact {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  color: #667085;
-  font-size: 14px;
-}
-
-.resume-preview section {
-  margin-bottom: 18px;
-}
-
-.resume-preview h3 {
-  margin: 0 0 8px;
-  color: #1f2937;
-  font-size: 16px;
-}
-
-.resume-preview p {
-  margin: 0;
-  line-height: 1.8;
-  white-space: pre-wrap;
+.preview-frame {
+  width: 100%;
+  height: 640px;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
 }
 </style>

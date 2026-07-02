@@ -20,6 +20,7 @@
         <el-menu-item index="/admin/review-records">审核记录</el-menu-item>
         <el-menu-item index="/admin/settings">平台设置</el-menu-item>
         <el-menu-item index="/admin/action-logs">操作日志</el-menu-item>
+        <el-menu-item index="/admin/notifications">站内通知</el-menu-item>
       </el-menu>
     </el-aside>
 

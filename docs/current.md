@@ -715,3 +715,495 @@ user 表新增 enabled 字段。被禁用账号不能登录，已有 token 调�
 已纳入管理员操作日志的动作包括：启用/禁用用户、重置密码、教师接收请求权限开关、平台设置新增/更新、教师资料审核通过/拒绝、撤回请求同意/拒绝。
 
 本轮仍未实现强制修改审核请求状态、付费交易和评价系统。
+
+
+岗位与投递
+当前已完成下一阶段开发计划的第一阶段：岗位库与投递闭环。
+详细计划保存在：
+text
+
+
+
+docs/next_development_plan.md
+
+新增数据库表：
+text
+
+
+
+job
+job_application
+
+job 字段包括：
+text
+
+
+
+id
+title
+company
+industry
+city
+salary_range
+requirement
+description
+status
+create_time
+update_time
+
+job_application 字段包括：
+text
+
+
+
+id
+student_id
+resume_id
+job_id
+status
+apply_time
+update_time
+
+岗位状态：
+text
+
+
+
+OPEN
+CLOSED
+
+投递状态：
+text
+
+
+
+APPLIED
+SCREENING
+WRITTEN_TEST
+INTERVIEW
+OFFER
+REJECTED
+CLOSED
+
+新增数据库迁移脚本：
+text
+
+
+
+database/09_job_and_application.sql
+
+新增后端接口：
+text
+
+
+
+GET  /api/jobs
+GET  /api/jobs/{id}
+POST /api/jobs/{id}/apply
+GET  /api/applications/student
+GET  /api/applications/{id}
+POST /api/applications/{id}/status
+
+新增前端页面：
+text
+
+
+
+/student/jobs
+/student/jobs/:id
+/student/applications
+
+当前流程：
+text
+
+
+
+学生进入岗位列表
+→ 按关键词、行业、城市、状态筛选岗位
+→ 查看岗位详情
+→ 选择自己的简历投递
+→ 系统创建投递记录
+→ 学生在投递记录页查看并手动更新求职状态
+
+业务规则：
+只有 STUDENT 可以投递岗位。
+学生只能使用自己的简历投递。
+只能投递 OPEN 状态岗位。
+同一学生不能重复投递同一岗位。
+投递成功后创建 job_application，初始状态为 APPLIED。
+
+本阶段没有实现岗位管理员维护页、求职经验记录、提醒任务、企业反馈同步和真实外部招聘平台接口，这些属于后续阶段。
+
+
+求职进度、提醒与经验记录
+当前已完成下一阶段开发计划的第二阶段：求职进度、提醒与经验记录。
+
+新增数据库表：
+text
+
+
+
+application_experience
+application_reminder
+
+application_experience 字段包括：
+text
+
+
+
+id
+application_id
+student_id
+stage
+content
+create_time
+update_time
+
+application_reminder 字段包括：
+text
+
+
+
+id
+application_id
+student_id
+remind_type
+remind_time
+content
+status
+create_time
+update_time
+
+经验阶段：
+text
+
+
+
+GENERAL
+WRITTEN_TEST
+INTERVIEW
+OFFER
+
+提醒类型：
+text
+
+
+
+FOLLOW_UP
+WRITTEN_TEST
+INTERVIEW
+GENERAL
+
+提醒状态：
+text
+
+
+
+PENDING
+DONE
+CANCELLED
+
+新增数据库迁移脚本：
+text
+
+
+
+database/10_application_progress.sql
+
+新增后端接口：
+text
+
+
+
+GET  /api/applications/{id}/experiences
+POST /api/applications/{id}/experiences
+PUT  /api/applications/experiences/{id}
+DELETE /api/applications/experiences/{id}
+GET  /api/applications/{id}/reminders
+POST /api/applications/{id}/reminders
+POST /api/applications/reminders/{id}/done
+DELETE /api/applications/reminders/{id}
+GET  /api/applications/student/reminders/pending
+
+前端增强：
+text
+
+
+
+/student/applications
+/student/home
+
+/student/applications 现在支持打开投递详情抽屉，查看状态时间线，新增、编辑、删除经验记录，新增提醒，标记提醒完成，删除提醒。
+
+/student/home 现在展示当前学生的待提醒事项，并可跳转到投递记录页。
+
+业务规则：
+学生只能管理自己的投递记录下的经验和提醒。
+经验记录必须填写内容。
+提醒时间必须晚于当前时间。
+第一版不做后台定时推送，只在学生端展示待提醒事项。
+
+本阶段没有实现企业反馈同步、后台定时通知和站内通知中心，这些属于后续阶段。
+
+
+简历模板、预览与导出
+当前已完成下一阶段开发计划的第三阶段：简历模板、预览与导出。
+
+新增数据库表：
+text
+
+
+
+resume_template
+
+resume 表新增字段：
+text
+
+
+
+template_id
+
+resume_template 字段包括：
+text
+
+
+
+id
+name
+industry
+job_type
+structure
+style
+enabled
+create_time
+update_time
+
+模板 style 当前支持：
+text
+
+
+
+CLASSIC
+COMPACT
+MODERN
+
+新增数据库迁移脚本：
+text
+
+
+
+database/11_resume_template.sql
+
+新增后端接口：
+text
+
+
+
+GET /api/resume-templates
+GET /api/resume-templates/{id}
+GET /api/resume/{id}/preview
+GET /api/resume/{id}/export
+
+前端增强：
+text
+
+
+
+/student/resume/edit
+/student/resume/:id
+/student/resume/:id/versions
+
+学生编辑简历时可以选择简历模板。
+点击预览或导出/打印时，前端会先保存当前草稿，再请求后端生成模板化 HTML。
+预览在弹窗 iframe 中展示。
+导出第一版采用可打印 HTML，新窗口打开后可由浏览器打印或另存为 PDF。
+教师返回版本继承源简历模板，版本列表支持预览和导出。
+
+本阶段没有引入真实 PDF 生成库，也没有实现管理员维护模板页面；这些属于后续增强。
+
+
+教师批注与评分
+当前已完成下一阶段开发计划的第四阶段：教师批注与评分。
+
+新增数据库表：
+text
+
+
+
+resume_annotation
+resume_score
+
+resume_annotation 字段包括：
+text
+
+
+
+id
+request_id
+resume_id
+teacher_id
+student_id
+field_name
+mark_type
+content
+create_time
+update_time
+
+resume_score 字段包括：
+text
+
+
+
+id
+request_id
+resume_id
+teacher_id
+student_id
+score
+remark
+create_time
+update_time
+
+新增数据库迁移脚本：
+text
+
+
+
+database/12_resume_annotation_score.sql
+
+新增后端接口：
+text
+
+
+
+GET  /api/review-requests/{id}/annotations
+POST /api/review-requests/{id}/annotations
+DELETE /api/resume-annotations/{id}
+GET  /api/review-requests/{id}/score
+POST /api/review-requests/{id}/score
+GET  /api/admin/manage/resume-annotations
+GET  /api/admin/manage/resume-scores
+
+前端增强：
+text
+
+
+
+/teacher/requests
+/student/review-requests
+/admin/review-records
+
+/teacher/requests 现在支持对已接受的审核请求打开批注与评分弹窗，教师可以为具体简历字段添加批注、删除自己的批注，并提交或更新总分与评分说明。
+
+/student/review-requests 现在支持学生查看自己相关审核请求的教师批注与评分。
+
+/admin/review-records 现在在审核记录下方展示批注监管和评分监管列表，管理员可以查看所有教师批注与评分。
+
+业务规则：
+教师只能给自己已接受的审核请求添加批注和评分。
+批注必须绑定到具体简历字段。
+批注类型支持 TEXT、STRUCTURE、KEYWORD。
+分数范围为 0-100。
+同一审核请求只有一条评分，重复提交会更新评分。
+学生只能查看自己相关审核请求的批注和评分。
+管理员可以监管所有批注和评分。
+教师只能删除自己的批注，管理员可删除任意批注。
+
+本阶段没有实现字段旁内联高亮批注，也没有把评分提交合并进返回新简历流程；当前采用独立批注与评分弹窗，后续可继续增强交互。
+
+
+站内通知
+当前已完成下一阶段开发计划的第五阶段：站内通知。
+
+新增数据库表：
+text
+
+
+
+notification
+
+notification 字段包括：
+text
+
+
+
+id
+user_id
+type
+title
+content
+read_status
+related_type
+related_id
+create_time
+read_time
+
+通知状态：
+text
+
+
+
+UNREAD
+READ
+
+新增数据库迁移脚本：
+text
+
+
+
+database/13_notification.sql
+
+新增后端能力：
+text
+
+
+
+Notification.java
+NotificationMapper.java
+NotificationService.java
+NotificationController.java
+
+新增后端接口：
+text
+
+
+
+GET  /api/notifications
+GET  /api/notifications/unread-count
+POST /api/notifications/{id}/read
+POST /api/notifications/read-all
+
+前端新增页面：
+text
+
+
+
+/student/notifications
+/teacher/notifications
+/admin/notifications
+
+前端增强：
+text
+
+
+
+StudentLayout.vue 增加站内通知入口
+TeacherLayout.vue 增加站内通知入口
+AdminLayout.vue 增加站内通知入口
+
+已接入通知触发：
+教师接受审核请求时通知学生。
+教师拒绝审核请求时通知学生。
+教师返回新简历时通知学生。
+学生申请撤回时通知教师和管理员。
+管理员同意撤回时通知学生和教师。
+管理员拒绝撤回时通知学生和教师。
+教师资料审核通过或拒绝时通知教师。
+
+业务规则：
+用户只能查看自己的通知。
+用户可以将单条通知标记为已读。
+用户可以一键全部已读。
+后端提供未读数量接口。
+
+本阶段第一版通知页不做关联对象自动跳转，也不做后台定时调度。投递提醒仍通过学生端待提醒列表展示。

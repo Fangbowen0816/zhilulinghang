@@ -70,6 +70,10 @@ const routes = [
       {
         path: "action-logs",
         component: () => import("../views/admin/AdminActionLogsView.vue")
+      },
+      {
+        path: "notifications",
+        component: () => import("../views/common/NotificationsView.vue")
       }
     ]
   },
@@ -99,8 +103,24 @@ const routes = [
         component: () => import("../views/student/ResumeFeedbackView.vue")
       },
       {
+        path: "jobs",
+        component: () => import("../views/student/JobListView.vue")
+      },
+      {
+        path: "jobs/:id",
+        component: () => import("../views/student/JobDetailView.vue")
+      },
+      {
+        path: "applications",
+        component: () => import("../views/student/MyApplicationsView.vue")
+      },
+      {
         path: "review-requests",
         component: () => import("../views/student/MyReviewRequestsView.vue")
+      },
+      {
+        path: "notifications",
+        component: () => import("../views/common/NotificationsView.vue")
       }
     ]
   },
@@ -132,6 +152,10 @@ const routes = [
       {
         path: "history",
         component: () => import("../views/teacher/TeacherHistoryView.vue")
+      },
+      {
+        path: "notifications",
+        component: () => import("../views/common/NotificationsView.vue")
       }
     ]
   }
