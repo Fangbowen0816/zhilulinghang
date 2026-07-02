@@ -14,6 +14,7 @@ import com.zhilulinghang.backend.model.ReviewRequest;
 import com.zhilulinghang.backend.model.TeacherProfile;
 import com.zhilulinghang.backend.security.AuthContext;
 import com.zhilulinghang.backend.security.AuthUser;
+import com.zhilulinghang.backend.service.NotificationService;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -36,12 +37,14 @@ public class ReviewRequestController {
     private final ReviewRecordMapper reviewRecordMapper;
     private final ResumeMapper resumeMapper;
     private final TeacherProfileMapper teacherProfileMapper;
+    private final NotificationService notificationService;
 
-    public ReviewRequestController(ReviewRequestMapper reviewRequestMapper, ReviewRecordMapper reviewRecordMapper, ResumeMapper resumeMapper, TeacherProfileMapper teacherProfileMapper) {
+    public ReviewRequestController(ReviewRequestMapper reviewRequestMapper, ReviewRecordMapper reviewRecordMapper, ResumeMapper resumeMapper, TeacherProfileMapper teacherProfileMapper, NotificationService notificationService) {
         this.reviewRequestMapper = reviewRequestMapper;
         this.reviewRecordMapper = reviewRecordMapper;
         this.resumeMapper = resumeMapper;
         this.teacherProfileMapper = teacherProfileMapper;
+        this.notificationService = notificationService;
     }
 
     @PostMapping
@@ -102,6 +105,7 @@ public class ReviewRequestController {
         requirePending(request);
         String teacherReply = body == null ? null : trim(body.get("teacherReply"));
         reviewRequestMapper.accept(id, teacherReply);
+        notificationService.notifyUser(request.getStudentId(), "REVIEW_ACCEPTED", "教师已接受审核请求", "教师已接受你的简历审核请求。", "REVIEW_REQUEST", id);
         return reviewRequestMapper.findById(id);
     }
 
@@ -114,6 +118,7 @@ public class ReviewRequestController {
             throw new IllegalArgumentException("拒绝请求时必须填写理由和建议");
         }
         reviewRequestMapper.decline(id, body.getDeclineReason().trim(), body.getDeclineSuggestion().trim());
+        notificationService.notifyUser(request.getStudentId(), "REVIEW_DECLINED", "教师已拒绝审核请求", body.getDeclineReason().trim(), "REVIEW_REQUEST", id);
         return reviewRequestMapper.findById(id);
     }
 
@@ -137,6 +142,7 @@ public class ReviewRequestController {
         returnedResume.setStudentId(request.getStudentId());
         returnedResume.setSourceResumeId(sourceResume.getId());
         returnedResume.setGeneratedByTeacherId(request.getTeacherId());
+        returnedResume.setTemplateId(sourceResume.getTemplateId());
         returnedResume.setVersionType("TEACHER_RETURNED");
         returnedResume.setTitle(defaultReturnedTitle(body.getTitle(), sourceResume.getTitle()));
         returnedResume.setName(body.getName());
@@ -165,6 +171,7 @@ public class ReviewRequestController {
         record.setComment(trim(body.getComment()));
         record.setTeacherDeleted(false);
         reviewRecordMapper.insert(record);
+        notificationService.notifyUser(request.getStudentId(), "REVIEW_RETURNED", "教师已返回新简历版本", "教师已完成审核并返回新的简历版本。", "REVIEW_REQUEST", id);
 
         return Map.of(
                 "request", reviewRequestMapper.findById(id),
@@ -188,6 +195,8 @@ public class ReviewRequestController {
         }
         reviewRequestMapper.requestWithdraw(id, body.getReason().trim());
         resumeMapper.freeze(request.getSourceResumeId(), body.getReason().trim());
+        notificationService.notifyUser(request.getTeacherId(), "WITHDRAW_REQUESTED", "学生申请撤回审核请求", body.getReason().trim(), "REVIEW_REQUEST", id);
+        notificationService.notifyAdmins("WITHDRAW_REQUESTED", "有新的撤回申请待处理", body.getReason().trim(), "REVIEW_REQUEST", id);
         return reviewRequestMapper.findById(id);
     }
 

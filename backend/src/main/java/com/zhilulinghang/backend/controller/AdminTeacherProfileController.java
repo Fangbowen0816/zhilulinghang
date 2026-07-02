@@ -7,6 +7,7 @@ import com.zhilulinghang.backend.model.AdminActionLog;
 import com.zhilulinghang.backend.model.TeacherProfile;
 import com.zhilulinghang.backend.security.AuthContext;
 import com.zhilulinghang.backend.security.AuthUser;
+import com.zhilulinghang.backend.service.NotificationService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,10 +22,12 @@ import java.util.List;
 public class AdminTeacherProfileController {
     private final TeacherProfileMapper teacherProfileMapper;
     private final AdminActionLogMapper adminActionLogMapper;
+    private final NotificationService notificationService;
 
-    public AdminTeacherProfileController(TeacherProfileMapper teacherProfileMapper, AdminActionLogMapper adminActionLogMapper) {
+    public AdminTeacherProfileController(TeacherProfileMapper teacherProfileMapper, AdminActionLogMapper adminActionLogMapper, NotificationService notificationService) {
         this.teacherProfileMapper = teacherProfileMapper;
         this.adminActionLogMapper = adminActionLogMapper;
+        this.notificationService = notificationService;
     }
 
     @GetMapping
@@ -45,7 +48,9 @@ public class AdminTeacherProfileController {
         requireProfile(id);
         teacherProfileMapper.approve(id, admin.getId());
         log(admin, "APPROVE_TEACHER_PROFILE", "TEACHER_PROFILE", id, null);
-        return teacherProfileMapper.findById(id);
+        TeacherProfile updated = teacherProfileMapper.findById(id);
+        notificationService.notifyUser(updated.getTeacherId(), "TEACHER_PROFILE_APPROVED", "教师资料审核通过", "你的教师资料已通过审核。", "TEACHER_PROFILE", id);
+        return updated;
     }
 
     @PostMapping("/{id}/reject")
@@ -57,7 +62,9 @@ public class AdminTeacherProfileController {
         }
         teacherProfileMapper.reject(id, admin.getId(), request.getApprovalComment().trim());
         log(admin, "REJECT_TEACHER_PROFILE", "TEACHER_PROFILE", id, "reason=" + request.getApprovalComment().trim());
-        return teacherProfileMapper.findById(id);
+        TeacherProfile updated = teacherProfileMapper.findById(id);
+        notificationService.notifyUser(updated.getTeacherId(), "TEACHER_PROFILE_REJECTED", "教师资料审核未通过", request.getApprovalComment().trim(), "TEACHER_PROFILE", id);
+        return updated;
     }
 
     private TeacherProfile requireProfile(Long id) {

@@ -54,6 +54,7 @@ public class ResumePolishService {
                         Map.of("role", "user", "content", userPrompt(request))
                 ),
                 "response_format", Map.of("type", "json_object"),
+                "temperature", 0.2,
                 "thinking", Map.of("type", "disabled"),
                 "stream", false
         );
@@ -87,7 +88,7 @@ public class ResumePolishService {
         } catch (AiServiceException exception) {
             throw exception;
         } catch (com.fasterxml.jackson.core.JsonProcessingException exception) {
-            throw new AiServiceException("AI 返回内容格式异常，无法解析为系统要求的 JSON", exception);
+            throw new AiServiceException("AI 返回内容格式异常，已尝试提取 JSON 但仍未成功，请稍后重试或补充更具体的润色目标", exception);
         } catch (Exception exception) {
             throw new AiServiceException("AI 润色服务暂时不可用", exception);
         }
@@ -120,7 +121,32 @@ public class ResumePolishService {
     }
 
     private ResumePolishResponse parsePolishResult(String content) throws Exception {
-        return objectMapper.readValue(content, ResumePolishResponse.class);
+        String json = extractJsonObject(stripCodeFence(content));
+        JsonNode root = objectMapper.readTree(json);
+        if (root.isTextual() && StringUtils.hasText(root.asText())) {
+            root = objectMapper.readTree(extractJsonObject(stripCodeFence(root.asText())));
+        }
+        if (root.has("resume") && root.get("resume").isObject()) {
+            root = root.get("resume");
+        } else if (root.has("result") && root.get("result").isObject()) {
+            root = root.get("result");
+        } else if (root.has("data") && root.get("data").isObject()) {
+            root = root.get("data");
+        }
+
+        ResumePolishResponse response = new ResumePolishResponse();
+        response.setTitle(readText(root, "title"));
+        response.setName(readText(root, "name"));
+        response.setPhone(readText(root, "phone"));
+        response.setEmail(readText(root, "email"));
+        response.setTargetPosition(readText(root, "targetPosition", "target_position"));
+        response.setEducation(readText(root, "education"));
+        response.setExperience(readText(root, "experience", "projectExperience", "project_experience"));
+        response.setSkills(readText(root, "skills"));
+        response.setAwards(readText(root, "awards"));
+        response.setSelfEvaluation(readText(root, "selfEvaluation", "self_evaluation"));
+        response.setSummary(readText(root, "summary"));
+        return response;
     }
 
     private String resolveDeepSeekError(RestClientResponseException exception) {
@@ -205,6 +231,8 @@ public class ResumePolishService {
                 语言应简洁、正式、适合校招简历，尽量突出职责、技术能力和结果表达。
                 输出必须是 JSON，不要输出 Markdown，不要添加解释性段落。
                 JSON 字段必须包含 title、name、phone、email、targetPosition、education、experience、skills、awards、selfEvaluation、summary。
+                只输出一个 JSON 对象，不能使用 ```json 代码块，不能在 JSON 前后添加任何文字。
+                字段名必须使用上面给出的英文 camelCase，所有字段值必须是字符串；没有内容时输出空字符串。
                 对 phone、email、name 这类事实字段，只允许保留或规范格式，不得生成新内容。
                 """;
     }
@@ -225,6 +253,21 @@ public class ResumePolishService {
 
                 润色要求/目标：
                 %s
+
+                请严格按以下 JSON 结构返回，不要添加任何额外文本：
+                {
+                  "title": "",
+                  "name": "",
+                  "phone": "",
+                  "email": "",
+                  "targetPosition": "",
+                  "education": "",
+                  "experience": "",
+                  "skills": "",
+                  "awards": "",
+                  "selfEvaluation": "",
+                  "summary": ""
+                }
                 """.formatted(
                 blankToPlaceholder(request.getTitle()),
                 blankToPlaceholder(request.getName()),
@@ -262,6 +305,79 @@ public class ResumePolishService {
             trimmed = trimmed.replaceFirst("\\s*```$", "");
         }
         return trimmed.trim();
+    }
+
+    private String extractJsonObject(String content) {
+        String trimmed = content == null ? "" : content.trim();
+        if (!StringUtils.hasText(trimmed)) {
+            throw new AiServiceException("AI 未返回有效 JSON 内容");
+        }
+
+        int start = trimmed.indexOf('{');
+        if (start < 0) {
+            throw new AiServiceException("AI 返回内容中没有 JSON 对象");
+        }
+
+        boolean inString = false;
+        boolean escaped = false;
+        int depth = 0;
+        for (int i = start; i < trimmed.length(); i++) {
+            char ch = trimmed.charAt(i);
+            if (escaped) {
+                escaped = false;
+                continue;
+            }
+            if (ch == '\\' && inString) {
+                escaped = true;
+                continue;
+            }
+            if (ch == '"') {
+                inString = !inString;
+                continue;
+            }
+            if (inString) {
+                continue;
+            }
+            if (ch == '{') {
+                depth++;
+            } else if (ch == '}') {
+                depth--;
+                if (depth == 0) {
+                    return trimmed.substring(start, i + 1);
+                }
+            }
+        }
+        throw new AiServiceException("AI 返回 JSON 对象不完整");
+    }
+
+    private String readText(JsonNode node, String... names) {
+        if (node == null || node.isMissingNode() || node.isNull()) {
+            return "";
+        }
+        for (String name : names) {
+            JsonNode value = node.path(name);
+            if (value.isTextual()) {
+                return value.asText();
+            }
+            if (value.isNumber() || value.isBoolean()) {
+                return value.asText();
+            }
+            if (value.isArray()) {
+                StringBuilder builder = new StringBuilder();
+                for (JsonNode item : value) {
+                    if (item.isTextual() || item.isNumber() || item.isBoolean()) {
+                        if (!builder.isEmpty()) {
+                            builder.append("\n");
+                        }
+                        builder.append(item.asText());
+                    }
+                }
+                if (!builder.isEmpty()) {
+                    return builder.toString();
+                }
+            }
+        }
+        return "";
     }
 
     private String blankToPlaceholder(String value) {

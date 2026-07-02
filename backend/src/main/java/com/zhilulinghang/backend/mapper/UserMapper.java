@@ -21,6 +21,9 @@ public interface UserMapper {
     @Select("SELECT id, username, NULL AS password, role, enabled, create_time FROM `user` ORDER BY create_time DESC")
     List<User> findAll();
 
+    @Select("SELECT id, username, NULL AS password, role, enabled, create_time FROM `user` WHERE role = #{role} AND enabled = 1 ORDER BY create_time DESC")
+    List<User> findByRole(String role);
+
     @Select("SELECT COUNT(*) FROM `user` WHERE role = #{role}")
     int countByRole(String role);
 

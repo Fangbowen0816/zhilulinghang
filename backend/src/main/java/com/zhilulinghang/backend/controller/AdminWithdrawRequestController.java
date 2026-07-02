@@ -8,6 +8,7 @@ import com.zhilulinghang.backend.model.AdminActionLog;
 import com.zhilulinghang.backend.model.ReviewRequest;
 import com.zhilulinghang.backend.security.AuthContext;
 import com.zhilulinghang.backend.security.AuthUser;
+import com.zhilulinghang.backend.service.NotificationService;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,11 +25,13 @@ public class AdminWithdrawRequestController {
     private final ReviewRequestMapper reviewRequestMapper;
     private final ResumeMapper resumeMapper;
     private final AdminActionLogMapper adminActionLogMapper;
+    private final NotificationService notificationService;
 
-    public AdminWithdrawRequestController(ReviewRequestMapper reviewRequestMapper, ResumeMapper resumeMapper, AdminActionLogMapper adminActionLogMapper) {
+    public AdminWithdrawRequestController(ReviewRequestMapper reviewRequestMapper, ResumeMapper resumeMapper, AdminActionLogMapper adminActionLogMapper, NotificationService notificationService) {
         this.reviewRequestMapper = reviewRequestMapper;
         this.resumeMapper = resumeMapper;
         this.adminActionLogMapper = adminActionLogMapper;
+        this.notificationService = notificationService;
     }
 
     @GetMapping
@@ -44,6 +47,8 @@ public class AdminWithdrawRequestController {
         reviewRequestMapper.approveWithdraw(id, admin.getId(), body == null ? null : trim(body.getAdminComment()));
         resumeMapper.unfreeze(request.getSourceResumeId());
         log(admin, "APPROVE_WITHDRAW_REQUEST", "REVIEW_REQUEST", id, "sourceResumeId=" + request.getSourceResumeId());
+        notificationService.notifyUser(request.getStudentId(), "WITHDRAW_APPROVED", "撤回申请已通过", "管理员已同意你的撤回申请。", "REVIEW_REQUEST", id);
+        notificationService.notifyUser(request.getTeacherId(), "WITHDRAW_APPROVED", "审核请求已被撤回", "管理员已同意学生撤回该审核请求。", "REVIEW_REQUEST", id);
         return reviewRequestMapper.findById(id);
     }
 
@@ -57,6 +62,8 @@ public class AdminWithdrawRequestController {
         reviewRequestMapper.rejectWithdraw(id, admin.getId(), body.getAdminComment().trim());
         resumeMapper.unfreeze(request.getSourceResumeId());
         log(admin, "REJECT_WITHDRAW_REQUEST", "REVIEW_REQUEST", id, "sourceResumeId=" + request.getSourceResumeId());
+        notificationService.notifyUser(request.getStudentId(), "WITHDRAW_REJECTED", "撤回申请被拒绝", body.getAdminComment().trim(), "REVIEW_REQUEST", id);
+        notificationService.notifyUser(request.getTeacherId(), "WITHDRAW_REJECTED", "学生撤回申请被拒绝", body.getAdminComment().trim(), "REVIEW_REQUEST", id);
         return reviewRequestMapper.findById(id);
     }
 
